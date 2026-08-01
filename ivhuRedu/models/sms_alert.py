@@ -13,7 +13,7 @@ class SMSAlert(Base):
     recipients_count = Column(Integer, nullable=False, default=0)
     sent_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    # This forces the Python relationship to only load if the user's role is 'supervisor'
+    
     sent_by = relationship(
         "User", 
         primaryjoin="and_(SMSAlert.sent_by_user_id == User.id, User.role == 'supervisor')"
