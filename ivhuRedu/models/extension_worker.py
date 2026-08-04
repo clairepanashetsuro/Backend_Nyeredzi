@@ -12,7 +12,6 @@ class ExtensionWorker(Base):
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     ussd_pincode = Column(String(4), nullable=False)
 
-    role = Column(String(20), nullable=False, server_default="extension_worker")
     assigned_ward_name = Column(String(100), nullable=False)
     availability_status = Column(String(20), nullable=False, server_default="available")
 
