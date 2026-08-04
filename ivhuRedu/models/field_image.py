@@ -2,10 +2,10 @@ import uuid
 from sqlalchemy import Column, String, DateTime, ForeignKey, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from database import Base
+from ivhuRedu.database import Base
 
-class ReportImage(Base):
-    __tablename__ = "report_images"
+class FieldImage(Base):
+    __tablename__ = "field_images"
 
     image_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
     report_id = Column(UUID(as_uuid=True), ForeignKey("field_reports.report_id"), nullable=False)

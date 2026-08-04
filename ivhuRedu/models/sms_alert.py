@@ -2,7 +2,7 @@ from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-from database import Base
+from ivhuRedu.database import Base
 
 class SMSAlert(Base):
     __tablename__ = "sms_alerts"
@@ -14,7 +14,7 @@ class SMSAlert(Base):
     sent_at = Column(DateTime(timezone=True), server_default=func.now())
 
     
-    sent_by = relationship(
-        "User", 
-        primaryjoin="and_(SMSAlert.sent_by_user_id == User.id, User.role == 'supervisor')"
-    )
+    
+    
+    
+    sent_by = relationship("User", back_populates="sms_alerts")

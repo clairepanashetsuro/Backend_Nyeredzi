@@ -6,7 +6,7 @@ from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
-from database import Base
+from ivhuRedu.database import Base
 
 
 class RequestType(str, enum.Enum):
@@ -34,6 +34,7 @@ class FarmerRequest(Base):
     status = Column(Enum(RequestStatus, name="request_status"), nullable=False, default=RequestStatus.pending, server_default=RequestStatus.pending.value)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     resolved_at = Column(DateTime(timezone=True), nullable=True)
-
     farmer = relationship("Farmer", back_populates="requests")
     assigned_worker = relationship("ExtensionWorker", back_populates="farmer_requests")
+    field_reports = relationship("FieldReport", back_populates="farmer_request")
+    
