@@ -5,14 +5,10 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
 from ivhuRedu.dependencies import get_db
-from ivhuRedu.models.otp import OTP, OTPPurpose
+
 from ivhuRedu.models.user import User
 from ivhuRedu.schemas.auth import Token
-from ivhuRedu.schemas.otp import (
-    ForgotPassword,
-    ResetPassword,
-    VerifyOTP,
-)
+
 from ivhuRedu.services import auth as auth_service
 from ivhuRedu.services.otp import create_otp
 from ivhuRedu.services.security import hash_password

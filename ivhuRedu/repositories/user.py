@@ -1,16 +1,3 @@
-"""
-repositories/user.py
------------------------
-Data-access layer for the User entity: every direct database query lives
-here so the service layer (services/user.py) never has to know any
-SQLAlchemy query syntax - it just calls plain methods like get() or
-create().
-
-Kept stateless on purpose: methods take `db` as a parameter rather than
-storing a session on `self`, so the single module-level instance at the
-bottom of this file is safe to share and reuse across every request.
-"""
-
 import uuid
 
 from sqlalchemy.orm import Session
