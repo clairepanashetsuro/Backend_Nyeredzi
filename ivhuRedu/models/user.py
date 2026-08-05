@@ -3,7 +3,7 @@ import enum
 from sqlalchemy import Column, String, DateTime, Enum, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from database import Base
+from ivhuRedu.database import Base
 
 class UserType(str, enum.Enum):
     ADMIN = "admin"
@@ -26,5 +26,8 @@ class User(Base):
     user_type = Column(Enum(UserType), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+    farmer = relationship("Farmer", back_populates="user", uselist=False)
+    extension_worker = relationship("ExtensionWorker", back_populates="user", uselist=False)
 
 

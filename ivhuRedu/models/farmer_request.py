@@ -6,7 +6,7 @@ from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
-from database import Base
+from ivhuRedu.database import Base
 
 
 class RequestType(str, enum.Enum):

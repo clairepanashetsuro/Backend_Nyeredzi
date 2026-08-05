@@ -3,7 +3,7 @@ import enum
 from sqlalchemy import Column, String, DateTime, ForeignKey, Enum, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from database import Base
+from ivhuRedu.database import Base
 
 class IssueType(enum.Enum):
     land_degradation = "Land Degradation"
@@ -33,5 +33,4 @@ class FieldReport(Base):
 
     extension_worker = relationship("ExtensionWorker", back_populates="field_reports")
     farmer = relationship("Farmer", back_populates="field_reports")
-    farmer_request = relationship("FarmerRequest", back_populates="field_reports")
     farmer_request = relationship("FarmerRequest", back_populates="field_reports")

@@ -2,7 +2,7 @@ import uuid
 from sqlalchemy import Column, String, DateTime, ForeignKey, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from database import Base
+from ivhuRedu.database import Base
 from sqlalchemy.sql import func
 
 class ExtensionWorker(Base):
@@ -11,10 +11,10 @@ class ExtensionWorker(Base):
     worker_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     ussd_pincode = Column(String(4), nullable=False)
+    location_id = Column(UUID(as_uuid=True), ForeignKey("locations.location_id"), nullable=False)
 
     assigned_ward_name = Column(String(100), nullable=False)
     availability_status = Column(String(20), nullable=False, server_default="available")
-
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     last_updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 

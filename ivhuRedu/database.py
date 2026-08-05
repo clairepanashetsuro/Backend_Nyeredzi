@@ -4,11 +4,13 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 
 from dotenv import load_dotenv
 
-
 load_dotenv()
 
+database_url = os.getenv("DATABASE_URL")
 
-database_url = os.getenv("DATABASE_URL", "postgresql://postgres:YOUR_PASSWORD@localhost:5432/ivhuredu_db")
+if not database_url:
+    raise ValueError("DATABASE_URL environment variable is not set")
+
 
 engine = create_engine(database_url)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
