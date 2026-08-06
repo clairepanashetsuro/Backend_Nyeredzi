@@ -1,4 +1,4 @@
-from ivhuRedu.database import Base
+from database import Base
 from ivhuRedu.models.farmer import Farmer
 from ivhuRedu.models.extension_worker import ExtensionWorker
 from ivhuRedu.models.farmer_request import FarmerRequest

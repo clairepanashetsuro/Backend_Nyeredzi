@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from ivhuRedu.database import Base, engine 
+from database import Base, engine 
 from ivhuRedu.models.farmer import Farmer
 from ivhuRedu.models.extension_worker import ExtensionWorker
 from ivhuRedu.models.farmer_request import FarmerRequest

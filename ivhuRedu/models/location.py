@@ -2,7 +2,7 @@ import uuid
 from sqlalchemy import Column, String, Float, DateTime, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from ivhuRedu.database import Base
+from database import Base
 
 class Location(Base):
     __tablename__ = "locations"

@@ -3,7 +3,7 @@ import enum
 from sqlalchemy import Column, String, DateTime, Enum, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from ivhuRedu.database import Base
+from database import Base
 
 class UserType(str, enum.Enum):
     ADMIN = "admin"
