@@ -10,16 +10,16 @@ from ivhuRedu.database import Base
 
 
 class RequestType(str, enum.Enum):
-    visit_request = "visit_request"
-    advice_request = "advice_request"
-    land_degradation_report = "land_degradation_report"
+    Visit_Request = "visit_request"
+    Advice_Request = "advice_request"
+    Land_Degradation_Report = "land_degradation_report"
 
 
 class RequestStatus(str, enum.Enum):
-    pending = "pending"
-    assigned = "assigned"
-    resolved = "resolved"
-    cancelled = "cancelled"
+    Pending = "pending"
+    Assigned = "assigned"
+    Resolved = "resolved"
+    Cancelled = "cancelled"
 
 
 class FarmerRequest(Base):
@@ -30,10 +30,11 @@ class FarmerRequest(Base):
     worker_id = Column(PG_UUID(as_uuid=True),ForeignKey("extension_workers.worker_id", ondelete="SET NULL"),nullable=True,)
     request_type = Column(Enum(RequestType, name="request_type"), nullable=False)
     ussd_input_text = Column(Text, nullable=True)
-    distance_m = Column(Integer, nullable=False)
-    status = Column(Enum(RequestStatus, name="request_status"), nullable=False, default=RequestStatus.pending, server_default=RequestStatus.pending.value)
+    distance_m = Column(Integer, nullable=True)
+    request_status = Column(Enum(RequestStatus, name="request_status"), nullable=False, server_default="pending")
+    
+
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     resolved_at = Column(DateTime(timezone=True), nullable=True)
-
     farmer = relationship("Farmer", back_populates="requests")
     assigned_worker = relationship("ExtensionWorker", back_populates="farmer_requests")

@@ -15,4 +15,6 @@ __all__ = [
     "FieldReport",
     "Location",
     "User",
+    "FieldImage",
+    
 ]

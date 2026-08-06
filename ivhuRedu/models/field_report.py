@@ -5,15 +5,15 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from ivhuRedu.database import Base
 
-class IssueType(enum.Enum):
-    land_degradation = "Land Degradation"
-    pest_outbreak = "Pest Outbreak"
-    crop_failure = "Crop Failure"
+class IssueType(str, enum.Enum):
+    LAND_DEGRADATION = "land_degradation"
+    PEST_OUTBREAK = "pest_outbreak"
+    CROP_FAILURE = "crop_failure"
 
 
-class SyncStatus(enum.Enum):
-    pending_sync = "pending_sync"
-    synced = "synced"
+class SyncStatus(str, enum.Enum):
+    PENDING_SYNC = "pending_sync"
+    SYNCED = "synced"
 
 class FieldReport(Base):
     __tablename__ = "field_reports"
@@ -34,3 +34,4 @@ class FieldReport(Base):
     extension_worker = relationship("ExtensionWorker", back_populates="field_reports")
     farmer = relationship("Farmer", back_populates="field_reports")
     farmer_request = relationship("FarmerRequest", back_populates="field_reports")
+    images = relationship("FieldImage", back_populates="field_report",cascade="all, delete-orphan",)
