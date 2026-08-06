@@ -1,25 +1,4 @@
-"""
-schemas/user.py
-------------------
-Pydantic schemas for the User entity - the exact shape of the JSON coming
-in on a request and going out on a response. These are kept separate from
-the SQLAlchemy model on purpose:
 
-  * They validate incoming data (type, format, range) before it ever
-    touches the database.
-  * UserCreate/UserUpdate only ever list the fields a client is allowed
-    to set, so a request body can never smuggle in an unexpected field
-    like "id" or "hashed_password" directly (mass-assignment protection:
-    accept only the fields you have listed).
-  * hashed_password never appears in ANY schema below - not even
-    UserRead. A password hash should never be sent back to a client.
-
-The most important piece of business logic lives on UserCreate: email and
-password are required for everyone except a farmer. That rule has to live
-here (not on the database column) because a column constraint is either
-"always required" or "always optional" - it can't say "required, except
-when user_type == farmer".
-"""
 
 import re
 import uuid
