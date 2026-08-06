@@ -32,7 +32,7 @@ class User(Base):
 
     extension_worker = relationship("ExtensionWorker", back_populates="user", uselist=False)
     farmer = relationship("Farmer", back_populates="user", uselist=False)
-    sms_alerts = relationship("SMSAlert", back_populates="sent_by", cascade="all, delete-orphan")
+     
 
 
 

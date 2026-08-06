@@ -7,8 +7,8 @@ from .field_report import FieldReport
 from .farmer_request import FarmerRequest
 from .field_image import FieldImage
 from .location import Location
-from .sms_alert import SMSAlert
-from ivhuRedu.models.otp import OTP
+
+
  
 
 ___all__ = [
@@ -19,7 +19,5 @@ ___all__ = [
     "FieldReport",
     "FarmerRequest",
     "FieldImage",
-    "Location",
-    "SMSAlert",
-    "OTP"
+    "Location"
 ]

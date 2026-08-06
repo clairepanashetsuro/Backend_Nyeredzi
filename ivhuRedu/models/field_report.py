@@ -6,14 +6,14 @@ from sqlalchemy.orm import relationship
 from ivhuRedu.database import Base
 
 class IssueType(enum.Enum):
-    land_degradation = "Land Degradation"
-    pest_outbreak = "Pest Outbreak"
-    crop_failure = "Crop Failure"
+    Land_degradation = "Land Degradation"
+    Pest_outbreak = "Pest Outbreak"
+    Crop_failure = "Crop Failure"
 
 
-class SyncStatus(enum.Enum):
-    pending_sync = "pending_sync"
-    synced = "synced"
+class SyncStatus(str, enum.Enum):
+    Pending_sync = "pending_sync"
+    Synced = "synced"
 
 class FieldReport(Base):
     __tablename__ = "field_reports"
@@ -34,4 +34,4 @@ class FieldReport(Base):
     extension_worker = relationship("ExtensionWorker", back_populates="field_reports")
     farmer = relationship("Farmer", back_populates="field_reports")
     farmer_request = relationship("FarmerRequest", back_populates="field_reports")
-    images = relationship("FieldImage", back_populates="field_report")
+    images = relationship("FieldImage",back_populates="field_report",cascade="all, delete-orphan",)
