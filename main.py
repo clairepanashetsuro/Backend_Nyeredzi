@@ -1,10 +1,14 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 from ivhuRedu.routers.location import router as location_router
 from ivhuRedu.routers import broadcasts
+from dotenv import load_dotenv
+load_dotenv()
 
 app = FastAPI(title="IvhuRedu Agricultural Platform API", version="1.0.0")
 
+app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],

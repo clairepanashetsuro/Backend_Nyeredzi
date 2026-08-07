@@ -28,3 +28,14 @@ class LocationResponse(LocationBase):
 
 class LocationGeocodeRequest(BaseModel):
     address: str = Field(min_length=1)
+
+class NearbyWorkerResponse(BaseModel):
+    user_id: UUID
+    name: str
+    phone: str
+    role: str
+    latitude: float
+    longitude: float
+    distance_km: float
+
+    
