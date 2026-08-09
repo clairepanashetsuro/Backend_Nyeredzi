@@ -2,7 +2,6 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 from ivhuRedu.routers.location import router as location_router
-from ivhuRedu.routers.broadcasts import router as broadcasts_router
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -18,7 +17,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(broadcasts_router)
 app.include_router(location_router)
 
 @app.get("/")

@@ -37,7 +37,7 @@ class LocationService:
         return result.scalars().all()
 
     async def get_by_id(self, location_id: UUID):
-        result = await self.db.execute(select(Location).where(Location.id == location_id))
+        result = await self.db.execute(select(Location).where(Location.location_id == location_id))
         return result.scalar_one_or_none()
 
     async def update(self, location_id: UUID, location_update: LocationUpdate):
