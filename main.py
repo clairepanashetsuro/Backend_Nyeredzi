@@ -12,11 +12,31 @@ try:
     print("Database synchronized successfully.")
 except Exception as e:
     print(f"Notice: Table creation skipped due to uninitialized peer schemas: {e}")
+from fastapi.middleware.cors import CORSMiddleware
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
+from ivhuRedu.routers.location import router as location_router
+from ivhuRedu.routers import broadcasts
+from dotenv import load_dotenv
+load_dotenv()
 
-app = FastAPI(title="IvhuRedu API", version="1.0.0")
+app = FastAPI(title="IvhuRedu Agricultural Platform API", version="1.0.0")
+
+app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(broadcasts.router)
+app.include_router(location_router)
 
 app.include_router(farmer_request_router, prefix="/farmer-requests", tags=["Farmer Requests"])
 
 @app.get("/")
 def read_root():
     return {"message": "Welcome to the IvhuRedu API"}
+async def root():
+    return {"status": "ok"}
