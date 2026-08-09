@@ -1,61 +1,53 @@
 import json
 import os
+import uuid
 from datetime import datetime
+from typing import List
 
+LOG_FILE = os.getenv("SMS_AUDIT_LOG_PATH", "logs/sms_audit.json")
 
-LOG_FILE = "logs/sms_audit.json"
+def _ensure_dir():
+    dir_path = os.path.dirname(LOG_FILE)
+    if dir_path:
+        os.makedirs(dir_path, exist_ok=True)
 
+def load_logs() -> List[dict]:
+    if not os.path.exists(LOG_FILE):
+        return []
+    try:
+        with open(LOG_FILE, "r") as f:
+            return json.load(f)
+    except (json.JSONDecodeError, IOError):
+        return []
 
-def log_sms_broadcast(
-    sent_by,
-    sent_by_name,
-    ward,
-    message,
-    farmers,
-    workers,
-    total,
-    status
-):
-    if hasattr(sent_by, 'hex'):
-        sent_by = str(sent_by)
+def save_logs(logs: List[dict]):
+    _ensure_dir()
+    with open(LOG_FILE, "w") as f:
+        json.dump(logs, f, indent=4, default=str)
 
-    record = {
-        "broadcast_id": datetime.utcnow().strftime("%Y%m%d%H%M%S"),
-        "sent_by": sent_by,
+def log_sms_broadcast(sent_by, sent_by_name, ward, message, recipient_type, farmers, workers, total, status, provider_response=None):
+    logs = load_logs()
+    broadcast_id = str(uuid.uuid4())
+    created_at = datetime.now().isoformat()
+    
+    log_entry = {
+        "broadcast_id": broadcast_id,
+        "sent_by": str(sent_by),
         "sent_by_name": sent_by_name,
         "ward": ward,
         "message": message,
+        "recipient_type": recipient_type,
         "farmers": farmers,
         "workers": workers,
         "total_recipients": total,
         "status": status,
-        "created_at": datetime.utcnow().isoformat()
+        "provider_response": provider_response,
+        "created_at": created_at
     }
+    
+    logs.append(log_entry)
+    save_logs(logs)
+    return log_entry
 
-    os.makedirs("logs", exist_ok=True)
-
-    data = []
-    if os.path.exists(LOG_FILE) and os.path.getsize(LOG_FILE) > 0:
-        try:
-            with open(LOG_FILE, "r") as file:
-                data = json.load(file)
-                if not isinstance(data, list):
-                    data = []
-        except (json.JSONDecodeError, ValueError):
-            data = []
-
-    data.append(record)
-
-    with open(LOG_FILE, "w") as file:
-        json.dump(data, file, indent=4)
-
-
-def read_sms_log():
-    if not os.path.exists(LOG_FILE):
-        return []
-
-    try:
-        with open(LOG_FILE, "r") as file:
-            return json.load(file)
-    except (json.JSONDecodeError, ValueError):
-        return []
+def read_sms_log() -> List[dict]:
+    return load_logs()

@@ -1,1 +1,1 @@
-from .location import router as location_router
+from .broadcasts import router as broadcasts_router
