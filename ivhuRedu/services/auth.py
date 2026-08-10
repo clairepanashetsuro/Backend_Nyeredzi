@@ -1,25 +1,20 @@
-"""
-services/auth.py
--------------------
-Business logic for logging in: look the user up by phone number, check
-their password against the stored hash, and hand back signed tokens if
-everything succeeds.
-"""
 
 from datetime import timedelta
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
-from ivhuRedu.models.otp import OTPPurpose
-from ivhuRedu.models.user import UserType
+from ivhuRedu.models.user import User, UserType
 from ivhuRedu.repositories.user import user_repository
-from ivhuRedu.services.otp import create_otp
 from ivhuRedu.services.security import (
     create_access_token,
+    create_offline_token,
     create_refresh_token,
+    hash_password,
     verify_password,
 )
+
+
 
 
 def authenticate_user(
@@ -27,9 +22,6 @@ def authenticate_user(
     phone_number: str,
     password: str,
 ):
-    """
-    Validate the user's credentials.
-    """
 
     invalid_credentials = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -57,14 +49,13 @@ def authenticate_user(
     return user
 
 
+
+
 def login(
     db: Session,
     phone_number: str,
     password: str,
 ):
-    """
-    Authenticate the user and return the appropriate tokens.
-    """
 
     user = authenticate_user(
         db,
@@ -72,38 +63,24 @@ def login(
         password,
     )
 
-    # Farmers should never log in through the API.
+   
+
     if user.user_type == UserType.FARMER:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Farmers use the USSD system.",
         )
 
-    # Prevent locked users from logging in.
+   
+
     if user.is_locked:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Account locked.",
         )
 
-    # Force first-time users to reset their passwords.
-    if user.must_change_password:
+   
 
-        create_otp(
-            db=db,
-            user=user,
-            purpose=OTPPurpose.FIRST_LOGIN,
-        )
-
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=(
-                "Password reset required. "
-                "A verification code has been sent."
-            ),
-        )
-
-    # Token durations
     if user.user_type == UserType.EXTENSION_WORKER:
 
         access_expiry = timedelta(hours=12)
@@ -114,27 +91,117 @@ def login(
         access_expiry = timedelta(hours=1)
         refresh_expiry = timedelta(days=14)
 
-    else:
+    elif user.user_type == UserType.ADMIN:
 
         access_expiry = timedelta(minutes=30)
         refresh_expiry = timedelta(days=7)
 
+    else:
+
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Unsupported user type.",
+        )
+
+ 
+
+    token_data = {
+        "sub": str(user.id),
+        "role": user.user_type.value,
+    }
+
+    
+
     access_token = create_access_token(
-        data={
-            "sub": user.phone_number,
-        },
+        data=token_data,
         expires_delta=access_expiry,
     )
 
+   
+
     refresh_token = create_refresh_token(
-        data={
-            "sub": user.phone_number,
-        },
+        data=token_data,
         expires_delta=refresh_expiry,
     )
+
+ 
+
+    offline_token = None
+
+    if user.user_type == UserType.EXTENSION_WORKER:
+
+        offline_token = create_offline_token(
+            data=token_data,
+        )
+
+   
 
     return {
         "access_token": access_token,
         "refresh_token": refresh_token,
+        "offline_token": offline_token,
         "token_type": "bearer",
+        "role": user.user_type.value,
+        "must_change_password": user.must_change_password,
+    }
+
+
+
+
+def change_password(
+    db: Session,
+    user: User,
+    old_password: str,
+    new_password: str,
+):
+
+   
+
+    if not user.hashed_password:
+
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This account does not have a password.",
+        )
+
+    
+
+    if not verify_password(
+        old_password,
+        user.hashed_password,
+    ):
+
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Incorrect current password.",
+        )
+
+   
+
+    if verify_password(
+        new_password,
+        user.hashed_password,
+    ):
+
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="New password cannot be the same as the old password.",
+        )
+
+    
+
+    user.hashed_password = hash_password(
+        new_password
+    )
+
+    
+
+    user.must_change_password = False
+
+    db.commit()
+
+    db.refresh(user)
+
+    return {
+        "message": "Password changed successfully."
     }

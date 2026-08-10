@@ -3,7 +3,7 @@ import enum
 from sqlalchemy import Boolean, Column, String, DateTime, Enum, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from ivhuRedu.database import Base
+from database import Base
 
 
 class UserType(str, enum.Enum):
@@ -23,10 +23,10 @@ class User(Base):
     email = Column(String(100), unique=True, nullable=True, index=True)
     phone_number = Column(String(20), unique=True, nullable=False, index=True)
     hashed_password = Column(String(150), nullable=True)
-    user_type = Column(Enum(UserType), nullable=False)
+    user_type = Column(Enum(UserType,values_callable=lambda enum_class: [e.value for e in enum_class],name="usertype",),nullable=False,)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
-    must_change_password = Column(Boolean, default=True, nullable=False)
+    must_change_password = Column(Boolean, default=True, server_default="true",nullable=False)
     is_locked = Column(Boolean, default=False, nullable=False)
     locked_until = Column(DateTime(timezone=True), nullable=True)
 

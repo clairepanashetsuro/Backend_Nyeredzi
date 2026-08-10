@@ -11,7 +11,7 @@ from .location import Location
 
  
 
-___all__ = [
+__all__ = [
     "User",
     "UserType",
     "Farmer",

@@ -1,26 +1,48 @@
-from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException
+import uuid
+
+from fastapi import APIRouter, Depends, HTTPException,Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
+from slowapi import Limiter
 
-from ivhuRedu.dependencies import get_db
+from dependency import (
+    get_current_user,
+    get_db,
+)
 
-from ivhuRedu.models.user import User
-from ivhuRedu.schemas.auth import Token
+from ivhuRedu.models.user import User, UserType
+
+from ivhuRedu.schemas.auth import (
+    ChangePasswordRequest,
+    RefreshTokenRequest,
+    Token,
+)
 
 from ivhuRedu.services import auth as auth_service
-from ivhuRedu.services.otp import create_otp
-from ivhuRedu.services.security import hash_password
 
-router = APIRouter(prefix="/auth", tags=["auth"])
+from ivhuRedu.repositories.user import user_repository
+
+from ivhuRedu.services.security import (
+    create_access_token,
+    create_offline_token,
+    decode_token,
+)
 
 
-# ==========================================================
-# Login
-# ==========================================================
+router = APIRouter(
+    prefix="/auth",
+    tags=["auth"],
+)
 
-@router.post("/login", response_model=Token)
+
+
+
+
+@router.post(
+    "/login",
+    response_model=Token,
+)
 def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db),
@@ -35,120 +57,131 @@ def login(
     return Token(**token_data)
 
 
-# ==========================================================
-# Forgot password
-# ==========================================================
 
-@router.post("/forgot-password")
-def forgot_password(
-    data: ForgotPassword,
+
+@router.post(
+    "/change-password",
+)
+def change_user_password(
+    data: ChangePasswordRequest,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
 
-    user = (
-        db.query(User)
-        .filter(User.phone_number == data.phone_number)
-        .first()
-    )
-
-    if not user:
-        raise HTTPException(
-            status_code=404,
-            detail="User not found.",
-        )
-
-    create_otp(
+    return auth_service.change_password(
         db=db,
-        user=user,
-        purpose=OTPPurpose.PASSWORD_RESET,
+        user=current_user,
+        old_password=data.old_password,
+        new_password=data.new_password,
     )
 
-    return {
-        "message": "Verification code sent."
-    }
 
 
-# ==========================================================
-# Verify OTP
-# ==========================================================
-
-@router.post("/verify-otp")
-def verify_otp(
-    data: VerifyOTP,
+@router.post(
+    "/refresh-token",
+)
+def refresh_token(
+    data: RefreshTokenRequest,
     db: Session = Depends(get_db),
 ):
 
-    otp = (
-        db.query(OTP)
-        .filter(OTP.code == data.code)
-        .first()
+  
+
+    payload = decode_token(
+        data.refresh_token
     )
 
-    if not otp:
+    if payload is None:
+
         raise HTTPException(
-            status_code=404,
-            detail="Invalid verification code.",
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid refresh token.",
         )
 
-    if otp.used:
+  
+
+    if payload.get("token_type") != "refresh":
+
         raise HTTPException(
-            status_code=400,
-            detail="Code already used.",
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token type.",
         )
 
-    if datetime.now(timezone.utc) > otp.expires_at:
+
+    user_id = payload.get("sub")
+
+    if not user_id:
+
         raise HTTPException(
-            status_code=400,
-            detail="Verification code expired.",
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid refresh token.",
         )
 
-    otp.attempts += 1
+ 
 
-    if otp.attempts >= 5:
-        raise HTTPException(
-            status_code=403,
-            detail="Too many attempts.",
+    try:
+
+        user_uuid = uuid.UUID(
+            user_id
         )
 
-    otp.used = True
+    except (ValueError, TypeError):
 
-    db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid refresh token.",
+        )
 
-    return {
-        "message": "OTP verified successfully."
-    }
+  
 
-
-# ==========================================================
-# Reset password
-# ==========================================================
-
-@router.post("/reset-password")
-def reset_password(
-    data: ResetPassword,
-    db: Session = Depends(get_db),
-):
-
-    user = (
-        db.query(User)
-        .filter(User.phone_number == data.phone_number)
-        .first()
+    user = user_repository.get(
+        db,
+        user_uuid,
     )
 
-    if not user:
+    if user is None:
+
         raise HTTPException(
-            status_code=404,
+            status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found.",
         )
 
-    user.hashed_password = hash_password(
-        data.new_password
+  
+
+    if user.is_locked:
+
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account locked.",
+        )
+
+
+    token_data = {
+        "sub": str(user.id),
+        "role": user.user_type.value,
+    }
+
+   
+
+    access_token = create_access_token(
+        data=token_data,
     )
 
-    user.must_change_password = False
 
-    db.commit()
+    offline_token = None
+
+    if user.user_type == UserType.EXTENSION_WORKER:
+
+        offline_token = create_offline_token(
+            data=token_data,
+        )
+
 
     return {
-        "message": "Password updated successfully."
+        "access_token": access_token,
+        "offline_token": offline_token,
+        "token_type": "bearer",
+        "role": user.user_type.value,
+        "must_change_password": user.must_change_password,
     }
+

@@ -1,25 +1,25 @@
 import enum
 import uuid
 
-from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, Text
+from sqlalchemy import Column, DateTime, Enum, ForeignKey, Text , Float
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
-from ivhuRedu.database import Base
+from database import Base
 
 
 class RequestType(str, enum.Enum):
-    Visit_request = "visit_request"
-    Advice_request = "advice_request"
-    Land_degradation_report = "land_degradation_report"
+    VISIT_REQUEST = "visit_request"
+    ADVISE_REQUEST = "advice_request"
+    LAND_DEGRADATION_REPORT = "land_degradation_report"
 
 
 class RequestStatus(str, enum.Enum):
-    PendingDeprecationWarningending = "pending"
-    Assigned = "assigned"
-    Resolved = "resolved"
-    Cancelled = "cancelled"
+    PENDING = "pending"
+    ASSIGNED = "assigned"
+    RESOLVED = "resolved"
+    CANCELLED = "cancelled"
 
 
 class FarmerRequest(Base):
@@ -30,7 +30,7 @@ class FarmerRequest(Base):
     worker_id = Column(PG_UUID(as_uuid=True),ForeignKey("extension_workers.worker_id", ondelete="SET NULL"),nullable=True,)
     request_type = Column(Enum(RequestType, name="request_type"), nullable=False)
     ussd_input_text = Column(Text, nullable=True)
-    distance_m = Column(Integer, nullable=True)
+    distance_m = Column(Float, nullable=True)
     status = Column(Enum(RequestStatus, name="request_status"),nullable=False,default=RequestStatus.PENDING,server_default=RequestStatus.PENDING.value,)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)

@@ -3,26 +3,26 @@ import enum
 from sqlalchemy import Column, String, DateTime, ForeignKey, Enum, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from ivhuRedu.database import Base
+from database import Base
 
-class IssueType(enum.Enum):
-    Land_degradation = "Land Degradation"
-    Pest_outbreak = "Pest Outbreak"
-    Crop_failure = "Crop Failure"
+class IssueType(str,enum.Enum):
+    LAND_DEGRADATION = "Land Degradation"
+    PEST_OUTBREAK= "Pest Outbreak"
+    CROP_FAILURE = "Crop Failure"
 
 
 class SyncStatus(str, enum.Enum):
-    Pending_sync = "pending_sync"
-    Synced = "synced"
+    PENDING_SYNC = "pending_sync"
+    SYNCED = "synced"
 
 class FieldReport(Base):
     __tablename__ = "field_reports"
 
-    report_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    report_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     worker_id = Column(UUID(as_uuid=True), ForeignKey("extension_workers.worker_id"), nullable=False)
     farmer_id = Column(UUID(as_uuid=True), ForeignKey("farmers.farmer_id"), nullable=True)
     related_request_id = Column(UUID(as_uuid=True), ForeignKey("farmer_requests.request_id"), nullable=True)
-
+    sync_status = Column(Enum(SyncStatus),nullable=False,default=SyncStatus.PENDING_SYNC,server_default=SyncStatus.PENDING_SYNC.value,)
     issue_type = Column(Enum(IssueType), nullable=True)
     report_details = Column(Text, nullable=True)
     ussd_description = Column(Text, nullable=True)
