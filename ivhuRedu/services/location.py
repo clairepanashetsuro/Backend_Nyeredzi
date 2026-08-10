@@ -2,6 +2,7 @@ import math
 import os
 from typing import Optional
 import httpx
+from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_
 from uuid import UUID
@@ -24,6 +25,29 @@ class LocationService:
         a = math.sin(delta_lat / 2) ** 2 + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(delta_lon / 2) ** 2
         c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
         return R * c
+
+    def _get_api_key(self) -> str:
+        api_key = os.getenv("LOCATIONIQ_API_KEY")
+        if not api_key:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="LOCATIONIQ_API_KEY not configured in .env"
+            )
+        return api_key
+
+    async def _locationiq_request(self, endpoint: str, params: dict):
+        api_key = self._get_api_key()
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(
+                f"https://us1.locationiq.com/v1/{endpoint}.php",
+                params={"key": api_key, **params}
+            )
+            response.raise_for_status()
+            data = response.json()
+
+        if isinstance(data, dict) and "error" in data:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=data["error"])
+        return data
 
     async def create(self, location: LocationCreate):
         db_location = Location(**location.dict())
@@ -68,19 +92,10 @@ class LocationService:
         return result.scalars().all()
 
     async def geocode_and_create(self, request: LocationGeocodeRequest):
-        api_key = os.getenv("LOCATIONIQ_API_KEY")
-        if not api_key:
-            raise Exception("LOCATIONIQ_API_KEY not configured in .env")
-
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.get(
-                "https://us1.locationiq.com/v1/search.php",
-                params={"key": api_key, "q": request.address, "format": "json", "limit": 1}
-            )
-            data = response.json()
-
-        if isinstance(data, dict) and "error" in data:
-            raise Exception(f"LocationIQ error: {data.get('error')}")
+        data = await self._locationiq_request(
+            "search",
+            {"q": request.address, "format": "json", "limit": 1}
+        )
         if not data:
             return None
 
@@ -94,8 +109,17 @@ class LocationService:
             longitude=lon,
             ward=getattr(request, "ward", None)
         )
-
         return await self.create(location_data)
+
+    async def autocomplete_address(self, q: str):
+        data = await self._locationiq_request("autocomplete", {"q": q, "limit": 5})
+        return {"suggestions": data}
+
+    async def reverse_geocode(self, lat: float, lon: float):
+        return await self._locationiq_request(
+            "reverse",
+            {"lat": lat, "lon": lon, "format": "json"}
+        )
 
     def _get_users_model(self):
         try:
@@ -180,7 +204,13 @@ class LocationService:
         nearby.sort(key=lambda x: x["distance_km"])
         return {"farmers": nearby, "count": len(nearby)}
 
-    async def search_users_by_role(self, role: str, q: Optional[str] = None, ward: Optional[str] = None):
+    async def search_users_by_role(
+        self,
+        role: str,
+        q: Optional[str] = None,
+        ward: Optional[str] = None,
+        skill: Optional[str] = None
+    ):
         users = self._get_users_model()
         if not users:
             return []
@@ -190,5 +220,11 @@ class LocationService:
             query = query.where(users.name.ilike(f"%{q}%"))
         if ward and hasattr(users, "ward"):
             query = query.where(users.ward.ilike(f"%{ward}%"))
+
         result = await self.db.execute(query)
-        return result.scalars().all()
+        users_list = result.scalars().all()
+
+        if skill:
+            users_list = [u for u in users_list if getattr(u, "skill", None) == skill]
+
+        return users_list
