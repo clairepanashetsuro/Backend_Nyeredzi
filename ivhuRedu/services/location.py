@@ -62,12 +62,13 @@ class LocationService:
 
     async def get_by_id(self, location_id: UUID):
         result = await self.db.execute(select(Location).where(Location.location_id == location_id))
-        return result.scalar_one_or_none()
+        location = result.scalar_one_or_none()
+        if not location:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Location not found")
+        return location
 
     async def update(self, location_id: UUID, location_update: LocationUpdate):
         location = await self.get_by_id(location_id)
-        if not location:
-            return None
         for field, value in location_update.dict(exclude_unset=True).items():
             setattr(location, field, value)
         await self.db.commit()
@@ -76,11 +77,9 @@ class LocationService:
 
     async def delete(self, location_id: UUID):
         location = await self.get_by_id(location_id)
-        if not location:
-            return False
         await self.db.delete(location)
         await self.db.commit()
-        return True
+        return None
 
     async def search(self, q: Optional[str] = None, ward: Optional[str] = None):
         query = select(Location)
@@ -97,7 +96,7 @@ class LocationService:
             {"q": request.address, "format": "json", "limit": 1}
         )
         if not data:
-            return None
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Address not found")
 
         lat = float(data[0]["lat"])
         lon = float(data[0]["lon"])
@@ -112,6 +111,11 @@ class LocationService:
         return await self.create(location_data)
 
     async def autocomplete_address(self, q: str):
+        if len(q) < 2:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Query must be at least 2 characters"
+            )
         data = await self._locationiq_request("autocomplete", {"q": q, "limit": 5})
         return {"suggestions": data}
 
