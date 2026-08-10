@@ -1,5 +1,4 @@
 import os
-
 from dotenv import load_dotenv
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
@@ -13,7 +12,6 @@ load_dotenv()
 
 
 database_url = os.getenv("DATABASE_URL")
-
 if not database_url:
     raise ValueError("DATABASE_URL environment variable is not set")
 
