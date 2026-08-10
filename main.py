@@ -1,16 +1,24 @@
 from fastapi import FastAPI
-from database import Base, engine 
-from ivhuRedu.models.farmer import Farmer
-from ivhuRedu.models.extension_worker import ExtensionWorker
-from ivhuRedu.models.farmer_request import FarmerRequest
-from ivhuRedu.models.field_report import FieldReport
-from ivhuRedu.models.location import Location
-from ivhuRedu.models.user import User
+from fastapi.middleware.cors import CORSMiddleware
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
+from ivhuRedu.routers.location import router as location_router
+from dotenv import load_dotenv
 
-Base.metadata.create_all(bind=engine)
+load_dotenv()
 
-app = FastAPI(title="IvhuRedu API", version="1.0.0")
+app = FastAPI(title="IvhuRedu Agricultural Platform API", version="1.0.0")
+
+app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(location_router)
 
 @app.get("/")
-def read_root():
-    return {"message": "Welcome to the IvhuRedu API"}
+async def root():
+    return {"status": "ok"}
