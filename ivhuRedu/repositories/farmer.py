@@ -48,13 +48,6 @@ class FarmerRepository:
         )
 
 
-    
-    def get_by_location(self, location_id: UUID) -> list[Farmer]:
-        return (
-            self.db.query(Farmer)
-            .filter(Farmer.location_id == location_id)
-            .all()
-        )
 
 
     def update_farmer(
