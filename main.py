@@ -38,9 +38,7 @@ logger = logging.getLogger("uvicorn.error")
 
 
 
-limiter = Limiter(
-    key_func=get_remote_address,
-)
+
 
 
 
@@ -70,8 +68,7 @@ app.add_middleware(
     allow_headers=[
         "Authorization",
         "Content-Type",
-        "X-Device-ID",
-        "X-Platform",
+       
     ],
 )
 
