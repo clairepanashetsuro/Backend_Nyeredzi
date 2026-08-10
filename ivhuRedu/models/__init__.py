@@ -16,6 +16,4 @@ __all__ = [
     "FarmerRequest",
     "Location",
     "User",
-    "FieldImage",
-    
 ]

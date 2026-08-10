@@ -12,6 +12,7 @@ from ivhuRedu.routers import broadcasts
 
 from fastapi.middleware.cors import CORSMiddleware
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
+from dotenv import load_dotenv
 
 load_dotenv()
 
@@ -39,3 +40,8 @@ app.include_router(farmer_request_router, prefix="/farmer-requests", tags=["Farm
 @app.get("/")
 def read_root():
     return {"message": "Welcome to the IvhuRedu API", "status": "ok"}
+app.include_router(location_router)
+
+@app.get("/")
+async def root():
+    return {"status": "ok"}
