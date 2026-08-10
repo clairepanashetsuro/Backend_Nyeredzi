@@ -1,5 +1,4 @@
 from fastapi import APIRouter, HTTPException, Request
-from uuid import UUID
 from typing import List
 
 from ivhuRedu.schemas.broadcast import (
@@ -14,12 +13,14 @@ from ivhuRedu.services.broadcasts import (
     get_summary,
     get_broadcast,
     delete_broadcast,
+    SMSBroadcastError,
 )
 
 router = APIRouter(
     prefix="/broadcasts",
     tags=["Broadcasts"]
 )
+
 
 @router.post("/send", response_model=BroadcastResponse, status_code=201)
 async def send_broadcast(data: BroadcastCreate):
@@ -34,24 +35,25 @@ async def send_broadcast(data: BroadcastCreate):
             sent_by_name=data.sent_by_name,
             phone_numbers=data.phone_numbers
         )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"SMS sending failed: {str(e)}")
+    except SMSBroadcastError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.post("/sms/callback")
 async def sms_callback(request: Request):
-    data = await request.json()
-    return service_sms_callback(
-        phone_number=data.get("phoneNumber"),
-        delivery_status=data.get("status")
-    )
+    payload = await request.json()
+    return service_sms_callback(payload)
+
 
 @router.get("/history", response_model=List[dict])
 async def history():
     return get_history()
 
+
 @router.get("/summary", response_model=BroadcastSummaryResponse)
 async def summary():
     return get_summary()
+
 
 @router.get("/{broadcast_id}", response_model=dict)
 async def broadcast_detail(broadcast_id: str):
@@ -59,6 +61,7 @@ async def broadcast_detail(broadcast_id: str):
     if record is None:
         raise HTTPException(status_code=404, detail="Broadcast not found")
     return record
+
 
 @router.delete("/{broadcast_id}")
 async def delete_broadcast_route(broadcast_id: str):
