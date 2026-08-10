@@ -27,5 +27,5 @@ class User(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
-
-
+    requests = relationship("FarmerRequest", foreign_keys="FarmerRequest.farmer_id", back_populates="farmer")
+    assigned_requests = relationship("FarmerRequest", foreign_keys="FarmerRequest.assigned_worker_id", back_populates="assigned_worker")
