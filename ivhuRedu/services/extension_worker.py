@@ -1,12 +1,14 @@
+
 import logging
 import uuid
 
 from fastapi import HTTPException, status
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from ivhuRedu.models.user import User, UserType
-
 from ivhuRedu.models.extension_worker import (
     ExtensionWorker,
     WorkerAvailabilityStatus,
@@ -18,7 +20,9 @@ from ivhuRedu.schemas.extension_worker import (
     ExtensionWorkerCreate,
 )
 
-from ivhuRedu.services.security import hash_password
+from ivhuRedu.services.security import (
+    hash_password,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -26,18 +30,15 @@ logger = logging.getLogger(__name__)
 
 
 
-def create_extension_worker(
-    db: Session,
+async def create_extension_worker(
+    db: AsyncSession,
     data: ExtensionWorkerCreate,
 ):
-    
 
-
-    existing_user = user_repository.get_by_phone_number(
+    existing_user = await user_repository.get_by_phone_number(
         db,
         data.phone_number,
     )
-
 
     if existing_user:
         raise HTTPException(
@@ -46,11 +47,25 @@ def create_extension_worker(
         )
 
 
+    if data.email:
+        existing_email = await user_repository.get_by_email(
+            db,
+            data.email,
+        )
+
+        if existing_email:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="A user with this email already exists.",
+            )
+
+
     user = User(
         first_name=data.first_name,
         last_name=data.last_name,
         phone_number=data.phone_number,
         email=data.email,
+
 
         hashed_password=hash_password(
             data.password
@@ -58,21 +73,20 @@ def create_extension_worker(
 
         user_type=UserType.EXTENSION_WORKER,
 
-        # Worker must change temporary password
-        # on first login
+
+
         must_change_password=True,
     )
 
-
     db.add(user)
 
-    db.flush()
+    await db.flush()
 
 
     worker = ExtensionWorker(
-
         user_id=user.id,
 
+        # USSD PIN must also be hashed
         hashed_ussd_pincode=hash_password(
             data.ussd_pincode
         ),
@@ -86,22 +100,17 @@ def create_extension_worker(
         ),
     )
 
-
     db.add(worker)
 
-
     try:
+        await db.commit()
 
-        db.commit()
-
-        db.refresh(worker)
+        await db.refresh(worker)
 
         return worker
 
-
     except IntegrityError:
-
-        db.rollback()
+        await db.rollback()
 
         logger.exception(
             "Failed creating extension worker"
@@ -115,49 +124,36 @@ def create_extension_worker(
 
 
 
-
-def update_worker_status(
-    db: Session,
+async def update_worker_status(
+    db: AsyncSession,
     worker_id: uuid.UUID,
     availability_status: WorkerAvailabilityStatus,
 ):
-    
-
-
-    worker = (
-        db.query(ExtensionWorker)
-        .filter(
+    result = await db.execute(
+        select(ExtensionWorker).where(
             ExtensionWorker.worker_id == worker_id
         )
-        .first()
     )
 
+    worker = result.scalar_one_or_none()
 
     if not worker:
-
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Extension worker not found.",
         )
 
-
-    worker.availability_status = (
-        availability_status
-    )
-
+    worker.availability_status = availability_status
 
     try:
+        await db.commit()
 
-        db.commit()
-
-        db.refresh(worker)
+        await db.refresh(worker)
 
         return worker
 
-
     except IntegrityError:
-
-        db.rollback()
+        await db.rollback()
 
         logger.exception(
             "Failed updating extension worker status"
@@ -170,17 +166,24 @@ def update_worker_status(
 
 
 
-def get_extension_worker(
-    db: Session,
+
+async def get_extension_worker(
+    db: AsyncSession,
     worker_id: uuid.UUID,
 ):
-    worker = (
-        db.query(ExtensionWorker)
-        .filter(
+    result = await db.execute(
+        select(ExtensionWorker)
+        .options(
+            selectinload(
+                ExtensionWorker.user
+            )
+        )
+        .where(
             ExtensionWorker.worker_id == worker_id
         )
-        .first()
     )
+
+    worker = result.scalar_one_or_none()
 
     if not worker:
         raise HTTPException(
@@ -192,18 +195,26 @@ def get_extension_worker(
 
 
 
-def update_extension_worker(
-    db: Session,
+
+async def update_extension_worker(
+    db: AsyncSession,
     worker_id: uuid.UUID,
     data: dict,
 ):
-    worker = get_extension_worker(
+    worker = await get_extension_worker(
         db,
         worker_id,
     )
 
     user = worker.user
 
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Extension worker user not found.",
+        )
+
+    # Fields belonging to the User table
     user_fields = {
         "first_name",
         "last_name",
@@ -211,6 +222,7 @@ def update_extension_worker(
         "email",
     }
 
+    # Fields belonging to ExtensionWorker table
     worker_fields = {
         "assigned_ward_name",
         "location_id",
@@ -219,46 +231,84 @@ def update_extension_worker(
 
     for field, value in data.items():
 
+
+
         if field in user_fields:
-            setattr(user, field, value)
+
+            setattr(
+                user,
+                field,
+                value,
+            )
+
+
+
+        elif field == "password":
+
+            user.hashed_password = hash_password(
+                value
+            )
+
+
+            user.must_change_password = True
+
+
 
         elif field in worker_fields:
-            setattr(worker, field, value)
+
+            setattr(
+                worker,
+                field,
+                value,
+            )
+
+
+
+        elif field == "ussd_pincode":
+
+            worker.hashed_ussd_pincode = hash_password(
+                value
+            )
 
     try:
+        await db.commit()
 
-        db.commit()
-
-        db.refresh(worker)
+        await db.refresh(worker)
 
         return worker
 
     except IntegrityError:
-
-        db.rollback()
+        await db.rollback()
 
         logger.exception(
-            "Failed updating extension worker."
+            "Failed updating extension worker"
         )
 
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=status.HTTP_409_CONFLICT,
             detail="Could not update extension worker.",
         )
 
 
 
-def delete_extension_worker(
-    db: Session,
+
+async def delete_extension_worker(
+    db: AsyncSession,
     worker_id: uuid.UUID,
 ):
-    worker = (
-        db.query(ExtensionWorker)
-        .filter(
+    result = await db.execute(
+        select(ExtensionWorker)
+        .options(
+            selectinload(
+                ExtensionWorker.user
+            )
+        )
+        .where(
             ExtensionWorker.worker_id == worker_id
         )
-        .first()
     )
+
+    worker = result.scalar_one_or_none()
 
     if not worker:
         raise HTTPException(
@@ -269,12 +319,14 @@ def delete_extension_worker(
     user = worker.user
 
     try:
-        db.delete(worker)
+        # Delete worker first because it references the user.
+        await db.delete(worker)
 
+        # Then delete the associated user.
         if user:
-            db.delete(user)
+            await db.delete(user)
 
-        db.commit()
+        await db.commit()
 
         return {
             "message": (
@@ -282,15 +334,14 @@ def delete_extension_worker(
             )
         }
 
-    except Exception:
-
-        db.rollback()
+    except IntegrityError:
+        await db.rollback()
 
         logger.exception(
-            "Failed deleting extension worker."
+            "Failed deleting extension worker"
         )
 
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=status.HTTP_409_CONFLICT,
             detail="Could not delete extension worker.",
         )

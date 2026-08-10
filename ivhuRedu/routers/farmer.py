@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, status
-from sqlalchemy.orm import Session
 import uuid
+
+from fastapi import APIRouter, Depends, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from dependency import get_db, require_roles
 
@@ -21,37 +22,33 @@ router = APIRouter(
 )
 
 
-
-
 @router.post(
     "/",
     response_model=FarmerRead,
     status_code=status.HTTP_201_CREATED,
 )
-def create_farmer(
+async def create_farmer(
     data: FarmerCreate,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(
-        require_roles(UserType.EXTENSION_WORKER)
+        require_roles(
+            UserType.EXTENSION_WORKER
+        )
     ),
 ):
-    
-
-    return farmer_service.create_farmer(
+    return await farmer_service.create_farmer(
         db=db,
         data=data,
     )
-
-
 
 
 @router.get(
     "/{farmer_id}",
     response_model=FarmerRead,
 )
-def get_farmer(
+async def get_farmer(
     farmer_id: uuid.UUID,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(
         require_roles(
             UserType.EXTENSION_WORKER,
@@ -60,23 +57,20 @@ def get_farmer(
         )
     ),
 ):
-
-    return farmer_service.get_farmer(
+    return await farmer_service.get_farmer(
         db=db,
         farmer_id=farmer_id,
     )
-
-
 
 
 @router.put(
     "/{farmer_id}",
     response_model=FarmerRead,
 )
-def update_farmer(
+async def update_farmer(
     farmer_id: uuid.UUID,
     data: FarmerUpdate,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(
         require_roles(
             UserType.EXTENSION_WORKER,
@@ -85,8 +79,7 @@ def update_farmer(
         )
     ),
 ):
-
-    return farmer_service.update_farmer(
+    return await farmer_service.update_farmer(
         db=db,
         farmer_id=farmer_id,
         data=data.model_dump(
@@ -95,23 +88,20 @@ def update_farmer(
     )
 
 
-
-
 @router.delete(
     "/{farmer_id}",
     status_code=status.HTTP_200_OK,
 )
-def delete_farmer(
+async def delete_farmer(
     farmer_id: uuid.UUID,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(
         require_roles(
             UserType.ADMIN,
         )
     ),
 ):
-
-    farmer_service.delete_farmer(
+    return await farmer_service.delete_farmer(
         db=db,
         farmer_id=farmer_id,
     )

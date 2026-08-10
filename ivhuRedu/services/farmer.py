@@ -1,8 +1,12 @@
+
 import logging
+import uuid
 
 from fastapi import HTTPException, status
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from ivhuRedu.models.user import User, UserType
 from ivhuRedu.models.farmer import Farmer
@@ -17,82 +21,55 @@ logger = logging.getLogger(__name__)
 
 
 
-
-def create_farmer(
-    db: Session,
+async def create_farmer(
+    db: AsyncSession,
     data: FarmerCreate,
 ):
-    
 
-
-    
-
-    existing_user = user_repository.get_by_phone_number(
+    existing_user = await user_repository.get_by_phone_number(
         db,
         data.phone_number,
     )
 
-
     if existing_user:
-
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="A user with this phone number already exists.",
         )
 
 
-
     user = User(
-
         first_name=data.first_name,
-
         last_name=data.last_name,
-
         phone_number=data.phone_number,
-
         user_type=UserType.FARMER,
-
-        # Farmers do not login through dashboard
         hashed_password=None,
-
         must_change_password=False,
     )
 
-
     db.add(user)
 
-    db.flush()
 
-
-
-    
+    await db.flush()
 
     farmer = Farmer(
-
         user_id=user.id,
-
         ward_name=data.ward_name,
-
+        primary_crop=data.primary_crop,
         location_id=data.location_id,
     )
 
-
     db.add(farmer)
 
-
-
     try:
+        await db.commit()
 
-        db.commit()
-
-        db.refresh(farmer)
+        await db.refresh(farmer)
 
         return farmer
 
-
     except IntegrityError:
-
-        db.rollback()
+        await db.rollback()
 
         logger.exception(
             "Failed creating farmer"
@@ -104,20 +81,23 @@ def create_farmer(
         )
 
 
-import uuid
 
 
-
-
-def get_farmer(
-    db: Session,
+async def get_farmer(
+    db: AsyncSession,
     farmer_id: uuid.UUID,
 ):
-    farmer = (
-        db.query(Farmer)
-        .filter(Farmer.farmer_id == farmer_id)
-        .first()
+    result = await db.execute(
+        select(Farmer)
+        .options(
+            selectinload(Farmer.user)
+        )
+        .where(
+            Farmer.farmer_id == farmer_id
+        )
     )
+
+    farmer = result.scalar_one_or_none()
 
     if not farmer:
         raise HTTPException(
@@ -130,71 +110,129 @@ def get_farmer(
 
 
 
-def update_farmer(
-    db: Session,
+async def update_farmer(
+    db: AsyncSession,
     farmer_id: uuid.UUID,
     data: dict,
 ):
-    farmer = get_farmer(
+    farmer = await get_farmer(
         db,
         farmer_id,
     )
 
     user = farmer.user
 
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Farmer user not found.",
+        )
+
+
     user_fields = {
         "first_name",
         "last_name",
         "phone_number",
-        
     }
+
 
     farmer_fields = {
         "ward_name",
         "location_id",
+        "primary_crop",
     }
+
+
+    if "phone_number" in data:
+        existing_user = (
+            await user_repository.get_by_phone_number(
+                db,
+                data["phone_number"],
+            )
+        )
+
+        if (
+            existing_user
+            and existing_user.id != user.id
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="A user with this phone number already exists.",
+            )
 
     for field, value in data.items():
 
         if field in user_fields:
-            setattr(user, field, value)
+
+            setattr(
+                user,
+                field,
+                value,
+            )
 
         elif field in farmer_fields:
-            setattr(farmer, field, value)
+
+            setattr(
+                farmer,
+                field,
+                value,
+            )
 
     try:
+        await db.commit()
 
-        db.commit()
-
-        db.refresh(farmer)
+        await db.refresh(farmer)
 
         return farmer
 
     except IntegrityError:
-
-        db.rollback()
+        await db.rollback()
 
         logger.exception(
-            "Failed updating farmer."
+            "Failed updating farmer"
         )
 
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=status.HTTP_409_CONFLICT,
             detail="Farmer could not be updated.",
         )
 
-def delete_farmer(
-    db: Session,
+
+
+
+async def delete_farmer(
+    db: AsyncSession,
     farmer_id: uuid.UUID,
 ):
-    farmer = get_farmer(db, farmer_id)
+    farmer = await get_farmer(
+        db,
+        farmer_id,
+    )
 
     user = farmer.user
 
-    db.delete(farmer)
-    db.delete(user)
+    try:
 
-    db.commit()
-    return {
-        "message": "Farmer deleted successfully."
-    }
+        await db.delete(farmer)
+
+
+        if user:
+            await db.delete(user)
+
+        await db.commit()
+
+        return {
+            "message": "Farmer deleted successfully."
+        }
+
+    except IntegrityError:
+        await db.rollback()
+
+        logger.exception(
+            "Failed deleting farmer"
+        )
+
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Farmer could not be deleted.",
+        )

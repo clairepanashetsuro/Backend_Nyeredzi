@@ -1,8 +1,7 @@
-
 from datetime import timedelta
 
 from fastapi import HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ivhuRedu.models.user import User, UserType
 from ivhuRedu.repositories.user import user_repository
@@ -15,21 +14,20 @@ from ivhuRedu.services.security import (
 )
 
 
-
-
-def authenticate_user(
-    db: Session,
+async def authenticate_user(
+    db: AsyncSession,
     phone_number: str,
     password: str,
 ):
-
     invalid_credentials = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Incorrect phone number or password",
-        headers={"WWW-Authenticate": "Bearer"},
+        headers={
+            "WWW-Authenticate": "Bearer"
+        },
     )
 
-    user = user_repository.get_by_phone_number(
+    user = await user_repository.get_by_phone_number(
         db,
         phone_number,
     )
@@ -49,21 +47,16 @@ def authenticate_user(
     return user
 
 
-
-
-def login(
-    db: Session,
+async def login(
+    db: AsyncSession,
     phone_number: str,
     password: str,
 ):
-
-    user = authenticate_user(
+    user = await authenticate_user(
         db,
         phone_number,
         password,
     )
-
-   
 
     if user.user_type == UserType.FARMER:
         raise HTTPException(
@@ -71,70 +64,51 @@ def login(
             detail="Farmers use the USSD system.",
         )
 
-   
-
     if user.is_locked:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Account locked.",
         )
 
-   
-
     if user.user_type == UserType.EXTENSION_WORKER:
-
         access_expiry = timedelta(hours=12)
         refresh_expiry = timedelta(days=30)
 
     elif user.user_type == UserType.SUPERVISOR:
-
         access_expiry = timedelta(hours=1)
         refresh_expiry = timedelta(days=14)
 
     elif user.user_type == UserType.ADMIN:
-
         access_expiry = timedelta(minutes=30)
         refresh_expiry = timedelta(days=7)
 
     else:
-
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Unsupported user type.",
         )
-
- 
 
     token_data = {
         "sub": str(user.id),
         "role": user.user_type.value,
     }
 
-    
-
     access_token = create_access_token(
         data=token_data,
         expires_delta=access_expiry,
     )
-
-   
 
     refresh_token = create_refresh_token(
         data=token_data,
         expires_delta=refresh_expiry,
     )
 
- 
-
     offline_token = None
 
     if user.user_type == UserType.EXTENSION_WORKER:
-
         offline_token = create_offline_token(
             data=token_data,
         )
-
-   
 
     return {
         "access_token": access_token,
@@ -146,61 +120,44 @@ def login(
     }
 
 
-
-
-def change_password(
-    db: Session,
+async def change_password(
+    db: AsyncSession,
     user: User,
     old_password: str,
     new_password: str,
 ):
-
-   
-
     if not user.hashed_password:
-
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="This account does not have a password.",
         )
 
-    
-
     if not verify_password(
         old_password,
         user.hashed_password,
     ):
-
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Incorrect current password.",
         )
 
-   
-
     if verify_password(
         new_password,
         user.hashed_password,
     ):
-
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="New password cannot be the same as the old password.",
         )
 
-    
-
     user.hashed_password = hash_password(
         new_password
     )
 
-    
-
     user.must_change_password = False
 
-    db.commit()
-
-    db.refresh(user)
+    await db.commit()
+    await db.refresh(user)
 
     return {
         "message": "Password changed successfully."

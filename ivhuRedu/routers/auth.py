@@ -1,10 +1,8 @@
-
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException,Request, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
-from sqlalchemy.orm import Session
-from slowapi import Limiter
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from dependency import (
     get_current_user,
@@ -36,19 +34,15 @@ router = APIRouter(
 )
 
 
-
-
-
 @router.post(
     "/login",
     response_model=Token,
 )
-def login(
+async def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-
-    token_data = auth_service.login(
+    token_data = await auth_service.login(
         db,
         phone_number=form_data.username,
         password=form_data.password,
@@ -57,18 +51,15 @@ def login(
     return Token(**token_data)
 
 
-
-
 @router.post(
     "/change-password",
 )
-def change_user_password(
+async def change_user_password(
     data: ChangePasswordRequest,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-
-    return auth_service.change_password(
+    return await auth_service.change_password(
         db=db,
         user=current_user,
         old_password=data.old_password,
@@ -76,106 +67,81 @@ def change_user_password(
     )
 
 
-
 @router.post(
     "/refresh-token",
 )
-def refresh_token(
+async def refresh_token(
     data: RefreshTokenRequest,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-
-  
 
     payload = decode_token(
         data.refresh_token
     )
 
     if payload is None:
-
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid refresh token.",
         )
 
-  
-
     if payload.get("token_type") != "refresh":
-
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token type.",
         )
 
-
     user_id = payload.get("sub")
 
     if not user_id:
-
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid refresh token.",
         )
 
- 
-
     try:
-
         user_uuid = uuid.UUID(
             user_id
         )
 
     except (ValueError, TypeError):
-
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid refresh token.",
         )
 
-  
-
-    user = user_repository.get(
+    user = await user_repository.get(
         db,
         user_uuid,
     )
 
     if user is None:
-
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found.",
         )
 
-  
-
     if user.is_locked:
-
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Account locked.",
         )
-
 
     token_data = {
         "sub": str(user.id),
         "role": user.user_type.value,
     }
 
-   
-
     access_token = create_access_token(
         data=token_data,
     )
 
-
     offline_token = None
 
     if user.user_type == UserType.EXTENSION_WORKER:
-
         offline_token = create_offline_token(
             data=token_data,
         )
-
 
     return {
         "access_token": access_token,
@@ -184,4 +150,3 @@ def refresh_token(
         "role": user.user_type.value,
         "must_change_password": user.must_change_password,
     }
-

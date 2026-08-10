@@ -1,95 +1,92 @@
-
 import uuid
 
-from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ivhuRedu.models.user import User
 
 
 class UserRepository:
 
-   
-
-    def get(
+    async def get(
         self,
-        db: Session,
+        db: AsyncSession,
         id: uuid.UUID,
-    ):
-        return db.get(
+    ) -> User | None:
+        return await db.get(
             User,
             id,
         )
 
-  
-
-    def get_by_email(
+    async def get_by_email(
         self,
-        db: Session,
+        db: AsyncSession,
         email: str,
-    ):
-        return (
-            db.query(User)
-            .filter(User.email == email)
-            .first()
+    ) -> User | None:
+        result = await db.execute(
+            select(User).where(
+                User.email == email
+            )
         )
 
-   
+        return result.scalar_one_or_none()
 
-    def get_by_phone_number(
+    async def get_by_phone_number(
         self,
-        db: Session,
+        db: AsyncSession,
         phone_number: str,
-    ):
-        return (
-            db.query(User)
-            .filter(User.phone_number == phone_number)
-            .first()
+    ) -> User | None:
+        result = await db.execute(
+            select(User).where(
+                User.phone_number == phone_number
+            )
         )
 
- 
+        return result.scalar_one_or_none()
 
-    def get_by_user_type(
+    async def get_by_user_type(
         self,
-        db: Session,
+        db: AsyncSession,
         user_type,
-    ):
-        return (
-            db.query(User)
-            .filter(User.user_type == user_type)
-            .first()
+    ) -> list[User]:
+        result = await db.execute(
+            select(User).where(
+                User.user_type == user_type
+            )
         )
 
-   
+        return result.scalars().all()
 
-    def get_all(
+    async def get_all(
         self,
-        db: Session,
-    ):
-        return db.query(User).all()
+        db: AsyncSession,
+    ) -> list[User]:
+        result = await db.execute(
+            select(User)
+        )
 
-   
+        return result.scalars().all()
 
-    def create(
+    async def create(
         self,
-        db: Session,
+        db: AsyncSession,
         data: dict,
-    ):
+    ) -> User:
         user = User(**data)
 
         db.add(user)
-        db.commit()
-        db.refresh(user)
+
+        await db.commit()
+        await db.refresh(user)
 
         return user
 
-  
-
-    def update(
+    async def update(
         self,
-        db: Session,
+        db: AsyncSession,
         db_obj: User,
         data: dict,
-    ):
+    ) -> User:
         for field, value in data.items():
             setattr(
                 db_obj,
@@ -97,21 +94,18 @@ class UserRepository:
                 value,
             )
 
-        db.commit()
-        db.refresh(db_obj)
+        await db.commit()
+        await db.refresh(db_obj)
 
         return db_obj
 
-   
-
-    def delete(
+    async def delete(
         self,
-        db: Session,
+        db: AsyncSession,
         db_obj: User,
-    ):
-        db.delete(db_obj)
-        db.commit()
+    ) -> None:
+        await db.delete(db_obj)
+        await db.commit()
 
 
 user_repository = UserRepository()
-

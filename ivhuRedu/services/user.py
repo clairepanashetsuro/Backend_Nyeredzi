@@ -1,11 +1,12 @@
+
 import logging
 import uuid
 
 from fastapi import HTTPException, status
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from ivhuRedu.models.user import User, UserType
+from ivhuRedu.models.user import UserType
 from ivhuRedu.repositories.user import user_repository
 from ivhuRedu.schemas.user import UserCreate, UserUpdate
 from ivhuRedu.services.security import hash_password
@@ -14,17 +15,15 @@ from ivhuRedu.services.security import hash_password
 logger = logging.getLogger(__name__)
 
 
-
-
-def get_user(
-    db: Session,
+async def get_user(
+    db: AsyncSession,
     id: uuid.UUID,
 ):
     """
     Return one user or raise 404.
     """
 
-    user = user_repository.get(
+    user = await user_repository.get(
         db,
         id,
     )
@@ -38,84 +37,81 @@ def get_user(
     return user
 
 
-
-
-def list_users(
-    db: Session,
+async def list_users(
+    db: AsyncSession,
 ):
     """
     Return all users.
     """
 
-    return user_repository.get_all(db)
+    return await user_repository.get_all(db)
 
 
-
-
-def create_user(
-    db: Session,
+async def create_user(
+    db: AsyncSession,
     data: UserCreate,
     user_type: UserType,
 ):
-    
-    
-
-    if data.email and user_repository.get_by_email(
-        db,
-        data.email,
-    ):
-
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="A user with this email already exists",
+    # Check for duplicate email.
+    if data.email:
+        existing_email = (
+            await user_repository.get_by_email(
+                db,
+                data.email,
+            )
         )
 
-    
+        if existing_email:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="A user with this email already exists",
+            )
 
-    if user_repository.get_by_phone_number(
-        db,
-        data.phone_number,
-    ):
 
+    existing_phone = (
+        await user_repository.get_by_phone_number(
+            db,
+            data.phone_number,
+        )
+    )
+
+    if existing_phone:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="A user with this phone number already exists",
         )
 
-   
+
+    if user_type == UserType.SUPERVISOR and not data.password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password is required when creating a supervisor.",
+        )
 
     payload = data.model_dump(
         exclude={"password"}
     )
 
-    
-
     payload["user_type"] = user_type
 
-   
 
     if data.password:
-
         payload["hashed_password"] = hash_password(
             data.password
         )
-
-   
-
-    payload["must_change_password"] = True
-
-   
+        payload["must_change_password"] = True
+    else:
+        payload["hashed_password"] = None
+        payload["must_change_password"] = False
 
     try:
-
-        return user_repository.create(
+        return await user_repository.create(
             db,
             payload,
         )
 
     except IntegrityError:
-
-        db.rollback()
+        await db.rollback()
 
         logger.exception(
             "Integrity error creating user"
@@ -127,50 +123,39 @@ def create_user(
         )
 
 
-
-
-def update_user(
-    db: Session,
+async def update_user(
+    db: AsyncSession,
     id: uuid.UUID,
     data: UserUpdate,
 ):
-    
-
-    user = get_user(
+    user = await get_user(
         db,
         id,
     )
-
-  
 
     update_data = data.model_dump(
         exclude_unset=True,
         exclude={"password"},
     )
 
-   
 
     if data.password:
-
         update_data["hashed_password"] = hash_password(
             data.password
         )
 
-        update_data["must_change_password"] = False
 
-    
+        update_data["must_change_password"] = True
 
     try:
-
-        return user_repository.update(
+        return await user_repository.update(
             db,
             user,
             update_data,
         )
 
     except IntegrityError:
-
-        db.rollback()
+        await db.rollback()
 
         logger.exception(
             "Integrity error updating user"
@@ -182,22 +167,20 @@ def update_user(
         )
 
 
-
-
-def delete_user(
-    db: Session,
+async def delete_user(
+    db: AsyncSession,
     id: uuid.UUID,
 ):
     """
     Delete an existing user.
     """
 
-    user = get_user(
+    user = await get_user(
         db,
         id,
     )
 
-    user_repository.delete(
+    await user_repository.delete(
         db,
         user,
     )

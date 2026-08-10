@@ -1,9 +1,8 @@
-
 import uuid
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from dependency import (
     ensure_self_or_privileged,
@@ -29,48 +28,23 @@ router = APIRouter(
 )
 
 
-
-
 @router.post(
     "/",
     response_model=UserRead,
+    status_code=status.HTTP_201_CREATED,
 )
-def create_user(
+async def create_user(
     data: UserCreate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(require_password_changed),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(
+        require_roles(UserType.ADMIN)
+    ),
 ):
-  
-
-    if current_user.user_type == UserType.ADMIN:
-
-        assigned_role = UserType.SUPERVISOR
-
-    elif current_user.user_type == UserType.SUPERVISOR:
-
-        assigned_role = UserType.EXTENSION_WORKER
-
-    elif current_user.user_type == UserType.EXTENSION_WORKER:
-
-        assigned_role = UserType.FARMER
-
-    else:
-
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You are not authorized to create users.",
-        )
-
-  
-
-    return user_service.create_user(
+    return await user_service.create_user(
         db=db,
         data=data,
-        user_type=assigned_role,
+        user_type=UserType.SUPERVISOR,
     )
-
-
-
 
 @router.get(
     "/",
@@ -84,60 +58,56 @@ def create_user(
         )
     ],
 )
-def list_users(
-    db: Session = Depends(get_db),
+async def list_users(
+    db: AsyncSession = Depends(get_db),
 ):
-    return user_service.list_users(db)
-
-
+    return await user_service.list_users(db)
 
 
 @router.get(
     "/{id}",
     response_model=UserRead,
 )
-def get_user(
+async def get_user(
     id: uuid.UUID,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(require_password_changed),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(
+        require_password_changed
+    ),
 ):
     ensure_self_or_privileged(
         id,
         current_user,
     )
 
-    return user_service.get_user(
+    return await user_service.get_user(
         db,
         id,
     )
-
-
 
 
 @router.put(
     "/{id}",
     response_model=UserRead,
 )
-def update_user(
+async def update_user(
     id: uuid.UUID,
     data: UserUpdate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(require_password_changed),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(
+        require_password_changed
+    ),
 ):
     ensure_self_or_privileged(
         id,
         current_user,
     )
 
-
-
-    return user_service.update_user(
+    return await user_service.update_user(
         db,
         id,
         data,
     )
-
-
 
 
 @router.delete(
@@ -151,12 +121,11 @@ def update_user(
         )
     ],
 )
-def delete_user(
+async def delete_user(
     id: uuid.UUID,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    return user_service.delete_user(
+    return await user_service.delete_user(
         db,
         id,
     )
-
