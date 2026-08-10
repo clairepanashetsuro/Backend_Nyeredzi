@@ -1,5 +1,6 @@
 import enum
 import uuid
+from sqlalchemy.orm import relationship
 
 from sqlalchemy import Column, DateTime, Integer, String, ForeignKey, Float, Text, Index
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
@@ -43,6 +44,9 @@ class FarmerRequest(Base):
     
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     resolved_at = Column(DateTime(timezone=True), nullable=True)
+
+    farmer = relationship("User", foreign_keys=[farmer_id], back_populates="requests")
+    assigned_worker = relationship("User", foreign_keys=[assigned_worker_id], back_populates="assigned_requests")
 
     __table_args__ = (
         Index("ix_farmer_requests_phone_number", "phone_number"),
