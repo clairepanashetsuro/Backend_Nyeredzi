@@ -41,7 +41,6 @@ logger = logging.getLogger("uvicorn.error")
 
 
 
-
 app = FastAPI(
     title="IvhuRedu API",
     version="1",
@@ -68,7 +67,7 @@ app.add_middleware(
     allow_headers=[
         "Authorization",
         "Content-Type",
-       
+        
     ],
 )
 

@@ -32,3 +32,7 @@ logs/
 
 # FastAPI / uvicorn
 *.pid
+
+# Alembic
+alembic/
+alembic.ini

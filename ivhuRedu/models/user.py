@@ -35,4 +35,7 @@ class User(Base):
      
 
 
+    farmer = relationship("Farmer", back_populates="user", uselist=False)
+    extension_worker = relationship("ExtensionWorker", back_populates="user", uselist=False)
+
 
