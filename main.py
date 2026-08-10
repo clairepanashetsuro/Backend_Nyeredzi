@@ -3,7 +3,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 from ivhuRedu.routers.broadcasts import router as broadcasts_router
 
+from ivhuRedu.routers.location import router as location_router
 from dotenv import load_dotenv
+
 load_dotenv()
 
 app = FastAPI(title="IvhuRedu Agricultural Platform API", version="1.0.0")
@@ -18,6 +20,7 @@ app.add_middleware(
 )
 
 app.include_router(broadcasts_router)
+app.include_router(location_router)
 
 @app.get("/")
 async def root():
