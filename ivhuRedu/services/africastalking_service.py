@@ -1,36 +1,30 @@
 import os
+from typing import List, Optional
 import africastalking
+from dotenv import load_dotenv
 
+load_dotenv()
 
-def send_sms(message: str, phone_numbers: list[str]):
+class AfricaTalkingService:
+    def __init__(self):
+        self.username = os.getenv("AT_USERNAME", "sandbox")
+        self.api_key = os.getenv("AT_API_KEY")
+        africastalking.initialize(self.username, self.api_key)
+        self.sms = africastalking.SMS
 
-    username = os.getenv("AT_USERNAME")
-    api_key = os.getenv("AT_API_KEY")
+    def send_bulk_sms(self, phone_numbers: List[str], message: str) -> Optional[dict]:
+        try:
+            formatted_numbers = [
+                num if num.startswith("+") else f"+{num}" 
+                for num in phone_numbers
+            ]
+            response = self.sms.send(message, formatted_numbers)
+            return response
+        except Exception as e:
+            print(f"AT SMS Error: {e}")
+            return None
 
-    if not username or not api_key:
-        return {
-            "success": False,
-            "error": "Africa's Talking credentials are missing."
-        }
+at_service = AfricaTalkingService()
 
-    try:
-        africastalking.initialize(username, api_key)
-
-        sms = africastalking.SMS
-
-        response = sms.send(
-            message,
-            phone_numbers
-        )
-
-        return {
-            "success": True,
-            "response": response
-        }
-
-    except Exception as e:
-
-        return {
-            "success": False,
-            "error": str(e)
-        };
+def send_sms(phone_numbers: List[str], message: str) -> Optional[dict]:
+    return at_service.send_bulk_sms(phone_numbers, message)
