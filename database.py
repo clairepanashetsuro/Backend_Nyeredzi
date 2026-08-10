@@ -9,8 +9,6 @@ database_url = os.getenv("DATABASE_URL")
 if not database_url:
     raise ValueError("DATABASE_URL environment variable is not set")
 
-database_url = database_url.replace("postgresql://", "postgresql+asyncpg://", 1) \
-                           .replace("postgres://", "postgresql+asyncpg://", 1)
 
 engine = create_async_engine(database_url, echo=True)
 async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
