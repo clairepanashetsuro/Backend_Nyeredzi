@@ -1,8 +1,11 @@
 import uuid
+
 from sqlalchemy import Column, String, Float, DateTime, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
+
 from database import Base
+
 
 class Location(Base):
     __tablename__ = "location"
@@ -12,9 +15,8 @@ class Location(Base):
     longitude = Column(Float, nullable=False)
     address = Column(String(250), nullable=False)
     display_name = Column(String(250), nullable=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
-
+    created_at = Column(DateTime(timezone=True),server_default=func.now(),nullable=False,)
+    updated_at = Column(DateTime(timezone=True),server_default=func.now(),onupdate=func.now(),nullable=False,)
 
     farmers = relationship("Farmer",back_populates="location",)
 
