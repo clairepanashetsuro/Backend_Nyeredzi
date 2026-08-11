@@ -36,6 +36,7 @@ class FarmerRequestService:
                 "farmer_id": req_in.farmer_id
             })
         return self.repo.create_multiple(requests_data)
+        
 
     def get_requests_by_phone(self, phone_number: str):
         return self.repo.get_by_phone(phone_number)

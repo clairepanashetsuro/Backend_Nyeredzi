@@ -12,6 +12,17 @@ class AfricaTalkingService:
         africastalking.initialize(self.username, self.api_key)
         self.sms = africastalking.SMS
 
+
+
+    def send_sms(self, message: str, recipients: list[str]):
+        try:
+            response = self.sms.send(message, recipients)
+            print(f"SMS sent: {response}")
+            return response
+        except Exception as e:
+            print(f"SMS failed: {e}")
+            return None
+        
     def send_bulk_sms(self, phone_numbers: List[str], message: str) -> Optional[dict]:
         try:
             formatted_numbers = [

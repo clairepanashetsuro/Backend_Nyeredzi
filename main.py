@@ -3,16 +3,13 @@ from database import Base, engine
 from dotenv import load_dotenv
 
 from ivhuRedu.models.farmer_request import FarmerRequest
-from ivhuRedu.models.location import Location
 from ivhuRedu.models.user import User
 
 from ivhuRedu.routers.farmer_request import router as farmer_request_router
-from ivhuRedu.routers.location import router as location_router
-from ivhuRedu.routers import broadcasts
+from ivhuRedu.routers.ussd import router as ussd_router
 
 from fastapi.middleware.cors import CORSMiddleware
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
-from dotenv import load_dotenv
 
 load_dotenv()
 
@@ -33,15 +30,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(broadcasts.router, include_in_schema=False)
-app.include_router(location_router, include_in_schema=False)
 app.include_router(farmer_request_router, prefix="/farmer-requests", tags=["Farmer Requests"])
+app.include_router(ussd_router, prefix="/ussd", tags=["USSD"])
+
 
 @app.get("/")
 def read_root():
     return {"message": "Welcome to the IvhuRedu API", "status": "ok"}
-app.include_router(location_router)
-
-@app.get("/")
-async def root():
-    return {"status": "ok"}
