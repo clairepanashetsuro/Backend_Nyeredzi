@@ -62,7 +62,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = int(
 REFRESH_TOKEN_EXPIRE_DAYS = int(
     os.getenv(
         "REFRESH_TOKEN_EXPIRE_DAYS",
-        "14",
+        "1",
     )
 )
 
@@ -70,7 +70,7 @@ REFRESH_TOKEN_EXPIRE_DAYS = int(
 OFFLINE_TOKEN_EXPIRE_DAYS = int(
     os.getenv(
         "OFFLINE_TOKEN_EXPIRE_DAYS",
-        "3",
+        "14",
     )
 )
 
