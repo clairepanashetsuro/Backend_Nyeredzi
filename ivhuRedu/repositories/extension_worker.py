@@ -1,39 +1,91 @@
-import uuid
+from uuid import UUID
 
-from fastapi import APIRouter, Depends, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from dependency import get_db, require_roles
 
-from ivhuRedu.models.user import User, UserType
-
-from ivhuRedu.schemas.extension_worker import (
-    ExtensionWorkerCreate,
-    ExtensionWorkerRead,
-)
-
-from ivhuRedu.services import extension_worker as extension_worker_service
+from ivhuRedu.models.extension_worker import ExtensionWorker
 
 
-router = APIRouter(
-    prefix="/extension-workers",
-    tags=["extension-workers"],
-)
+class ExtensionWorkerRepository:
+
+    def __init__(self, db: AsyncSession):
+        self.db = db
+
+    async def create_extension_worker(
+        self,
+        extension_worker: ExtensionWorker,
+    ) -> ExtensionWorker:
+        self.db.add(extension_worker)
+
+        await self.db.commit()
+        await self.db.refresh(extension_worker)
+
+        return extension_worker
+
+    async def get_by_id(
+        self,
+        extension_worker_id: UUID,
+    ) -> ExtensionWorker | None:
+        result = await self.db.execute(
+            select(ExtensionWorker).where(
+                ExtensionWorker.extension_worker_id == extension_worker_id
+            )
+        )
+
+        return result.scalar_one_or_none()
+
+    async def get_by_user_id(
+        self,
+        user_id: UUID,
+    ) -> ExtensionWorker | None:
+        result = await self.db.execute(
+            select(ExtensionWorker).where(
+                ExtensionWorker.user_id == user_id
+            )
+        )
+
+        return result.scalar_one_or_none()
+
+    async def exists_by_user_id(
+        self,
+        user_id: UUID,
+    ) -> bool:
+        result = await self.db.execute(
+            select(ExtensionWorker).where(
+                ExtensionWorker.user_id == user_id
+            )
+        )
+
+        return result.scalar_one_or_none() is not None
+
+    async def update_extension_worker(
+        self,
+        extension_worker_id: UUID,
+        
+        ward_name: str | None = None, 
+        location_id: UUID | None = None,
+    ) -> ExtensionWorker | None:
+
+        extension_worker = await self.get_by_id(
+            extension_worker_id
+        )
+
+        if not extension_worker:
+            return None
+
+    
+        if ward_name is not None:
+            extension_worker.ward_name = ward_name
+
+        if location_id is not None:
+            extension_worker.location_id = location_id
+
+        await self.db.commit()
+        await self.db.refresh(extension_worker)
+
+        return extension_worker
+        
+extension_worker_repository = ExtensionWorkerRepository()
 
 
-@router.post(
-    "/",
-    response_model=ExtensionWorkerRead,
-    status_code=status.HTTP_201_CREATED,
-)
-async def create_extension_worker(
-    data: ExtensionWorkerCreate,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(
-        require_roles(UserType.SUPERVISOR)
-    ),
-):
-    return await extension_worker_service.create_extension_worker(
-        db,
-        data,
-    )
