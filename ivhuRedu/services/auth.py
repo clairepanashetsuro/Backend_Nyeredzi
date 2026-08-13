@@ -71,16 +71,16 @@ async def login(
         )
 
     if user.user_type == UserType.EXTENSION_WORKER:
-        access_expiry = timedelta(hours=12)
-        refresh_expiry = timedelta(days=30)
+        access_expiry = timedelta(hours=1)
+        refresh_expiry = timedelta(days=1)
 
     elif user.user_type == UserType.SUPERVISOR:
         access_expiry = timedelta(hours=1)
-        refresh_expiry = timedelta(days=14)
+        refresh_expiry = timedelta(days=1)
 
     elif user.user_type == UserType.ADMIN:
-        access_expiry = timedelta(minutes=30)
-        refresh_expiry = timedelta(days=7)
+        access_expiry = timedelta(minutes=60)
+        refresh_expiry = timedelta(days=1)
 
     else:
         raise HTTPException(
