@@ -1,4 +1,5 @@
 import os
+import re
 from typing import List, Optional
 import africastalking
 from dotenv import load_dotenv
@@ -12,7 +13,25 @@ class AfricaTalkingService:
         africastalking.initialize(self.username, self.api_key)
         self.sms = africastalking.SMS
 
+    def _normalize_number(self, num: str) -> Optional[str]:
+        """Normalize to E.164 and validate length for common formats."""
+        num = num.strip().replace(" ", "").replace("-", "")
 
+        # Convert local format (0771112223) to international if needed
+        if num.startswith("0"):
+            num = "+263" + num[1:]  # adjust country code as needed
+        elif not num.startswith("+"):
+            num = "+" + num
+
+        # Strip non-digits except leading +
+        digits = re.sub(r"[^\d]", "", num)
+
+        # Zimbabwe: +263 followed by 9 digits = 12 digits total after country code check
+        if num.startswith("+263") and len(digits) != 12:  # 263 + 9 digits
+            print(f"Invalid ZW number, wrong length: {num}")
+            return None
+
+        return "+" + digits
 
     def send_sms(self, message: str, recipients: list[str]):
         try:
@@ -22,13 +41,21 @@ class AfricaTalkingService:
         except Exception as e:
             print(f"SMS failed: {e}")
             return None
-        
+
     def send_bulk_sms(self, phone_numbers: List[str], message: str) -> Optional[dict]:
+        formatted_numbers = []
+        for num in phone_numbers:
+            normalized = self._normalize_number(num)
+            if normalized:
+                formatted_numbers.append(normalized)
+            else:
+                print(f"Skipping invalid number: {num}")
+
+        if not formatted_numbers:
+            print("No valid numbers to send to.")
+            return None
+
         try:
-            formatted_numbers = [
-                num if num.startswith("+") else f"+{num}" 
-                for num in phone_numbers
-            ]
             response = self.sms.send(message, formatted_numbers)
             return response
         except Exception as e:

@@ -17,5 +17,7 @@ async def ussd_callback(
     network_code: str = Form(default="", alias="networkCode"),
     db: AsyncSession = Depends(get_db),
 ):
+    phone_number = phone_number.strip()  # remove leading/trailing whitespace, tabs, etc.
+    print(f"[USSD CALLBACK] cleaned phoneNumber={phone_number!r} len={len(phone_number)}")
     service = USSDService(db)
     return await service.handle(session_id, phone_number, text)
