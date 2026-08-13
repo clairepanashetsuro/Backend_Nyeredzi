@@ -1,6 +1,6 @@
 from uuid import UUID
-from fastapi import HTTPException
-from sqlalchemy.orm import Session
+from fastapi import HTTPException, status  
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ivhuRedu.repositories.field_image import FieldImageRepository
 from ivhuRedu.schemas.field_image import ReportImageCreate, ReportImageUpdate, ReportImageResponse
@@ -8,27 +8,36 @@ from ivhuRedu.schemas.field_image import ReportImageCreate, ReportImageUpdate, R
 
 class FieldImageService:
 
-    def __init__(self, db: Session):
+    def __init__(self, db: AsyncSession):
         self.repo = FieldImageRepository(db)
 
-    def create_image(self, data: ReportImageCreate) -> ReportImageResponse:
-        return self.repo.create(data)
+    async def create_image(self, data: ReportImageCreate) -> ReportImageResponse:
+        return await self.repo.create(data)
 
-    def get_images_by_report(self, report_id: UUID) -> list[ReportImageResponse]:
-        return self.repo.get_by_report_id(report_id)
+    async def get_images_by_report(self, report_id: UUID) -> list[ReportImageResponse]:
+        return await self.repo.get_by_report_id(report_id)
 
-    def get_image(self, image_id: UUID) -> ReportImageResponse:
-        img = self.repo.get_by_id(image_id)
+    async def get_image(self, image_id: UUID) -> ReportImageResponse:
+        img = await self.repo.get_by_id(image_id)
         if not img:
-            raise HTTPException(status_code=404, detail="Image not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, 
+                detail="Image not found"
+            )
         return img
 
-    def update_image(self, image_id: UUID, data: ReportImageUpdate) -> ReportImageResponse:
-        updated_img = self.repo.update(image_id, data)
+    async def update_image(self, image_id: UUID, data: ReportImageUpdate) -> ReportImageResponse:
+        updated_img = await self.repo.update(image_id, data)
         if not updated_img:
-            raise HTTPException(status_code=404, detail="Image not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, 
+                detail="Image not found"
+            )
         return updated_img
 
-    def delete_image(self, image_id: UUID) -> None:
-        if not self.repo.delete(image_id):
-            raise HTTPException(status_code=404, detail="Image not found")
+    async def delete_image(self, image_id: UUID) -> None:
+        if not await self.repo.delete(image_id):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, 
+                detail="Image not found"
+            )
