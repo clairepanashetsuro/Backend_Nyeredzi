@@ -1,16 +1,18 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from uuid import UUID
-from typing import List, Optional
+from typing import List
+
 
 class BroadcastCreate(BaseModel):
-    ward: str = Field(..., example="Ward 1")
-    message: str = Field(..., example="Hello farmers! Meeting tomorrow at 10AM.")
+    ward: str
+    message: str
     sent_by: UUID
-    sent_by_name: str = Field(..., example="Extension Worker Rudo")
-    recipient_type: str = Field(..., example="farmers")
-    farmer_count: int = Field(0, ge=0, example=15)
-    worker_count: int = Field(0, ge=0, example=0)
-    phone_numbers: List[str] = Field(..., example=["+263772123456"])
+    sent_by_name: str
+    recipient_type: str
+    farmer_count: int
+    worker_count: int
+    phone_numbers: List[str]
+
 
 class BroadcastResponse(BaseModel):
     broadcast_id: str
@@ -22,6 +24,7 @@ class BroadcastResponse(BaseModel):
     sent_by: str
     sent_by_name: str
     created_at: str
+
 
 class BroadcastSummaryResponse(BaseModel):
     total_broadcasts: int

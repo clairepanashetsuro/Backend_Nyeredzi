@@ -14,6 +14,7 @@ from ivhuRedu.services.broadcasts import (
     get_broadcast,
     delete_broadcast,
     SMSBroadcastError,
+    SMSBroadcastValidationError,
 )
 
 router = APIRouter(
@@ -35,6 +36,8 @@ async def send_broadcast(data: BroadcastCreate):
             sent_by_name=data.sent_by_name,
             phone_numbers=data.phone_numbers
         )
+    except SMSBroadcastValidationError as e:
+        raise HTTPException(status_code=422, detail=str(e))
     except SMSBroadcastError as e:
         raise HTTPException(status_code=500, detail=str(e))
 

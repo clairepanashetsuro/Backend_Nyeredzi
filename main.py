@@ -2,10 +2,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 from ivhuRedu.routers.broadcasts import router as broadcasts_router
-
 from ivhuRedu.routers.location import router as location_router
+from ivhuRedu.services.sms_leopard import send_sms
 from dotenv import load_dotenv
-
 load_dotenv()
 
 app = FastAPI(title="IvhuRedu Agricultural Platform API", version="1.0.0")
