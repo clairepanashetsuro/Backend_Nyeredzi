@@ -83,3 +83,5 @@ class FarmerRepository:
         await self.db.refresh(farmer)
 
         return farmer
+
+farmer_repository = FarmerRepository()
