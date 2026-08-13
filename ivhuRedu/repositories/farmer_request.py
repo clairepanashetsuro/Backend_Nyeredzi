@@ -101,7 +101,6 @@ class FarmerRequestRepository:
         return list(requests)
 
     async def remove_duplicates(self) -> int:
-        # 1. Build subquery to locate matching metrics containing duplicates
         subquery = (
             select(
                 FarmerRequest.phone_number,
@@ -118,7 +117,6 @@ class FarmerRequestRepository:
             .subquery()
         )
 
-        # 2. Fetch the records targetable for duplicate cleanup
         stmt = (
             select(FarmerRequest)
             .join(
