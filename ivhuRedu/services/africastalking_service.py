@@ -17,17 +17,15 @@ class AfricaTalkingService:
         """Normalize to E.164 and validate length for common formats."""
         num = num.strip().replace(" ", "").replace("-", "")
 
-        # Convert local format (0771112223) to international if needed
         if num.startswith("0"):
-            num = "+263" + num[1:]  # adjust country code as needed
+            num = "+263" + num[1:]  
         elif not num.startswith("+"):
             num = "+" + num
 
-        # Strip non-digits except leading +
+       
         digits = re.sub(r"[^\d]", "", num)
 
-        # Zimbabwe: +263 followed by 9 digits = 12 digits total after country code check
-        if num.startswith("+263") and len(digits) != 12:  # 263 + 9 digits
+        if num.startswith("+263") and len(digits) != 12:  
             print(f"Invalid ZW number, wrong length: {num}")
             return None
 
