@@ -7,15 +7,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import select
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
-from database import async_session
+from database import async_session, engine, Base
 
 from ivhuRedu.models import User, UserType
+from ivhuRedu.models.farmer_request import FarmerRequest
 
-from ivhuRedu.routers import auth as auth_router
-from ivhuRedu.routers import user as user_router
-from ivhuRedu.routers import extension_worker as extension_worker_router
-from ivhuRedu.routers import farmer as farmer_router
-from ivhuRedu.routers.location import router as location_router
+from ivhuRedu.routers.farmer_request import router as farmer_request_router
+from ivhuRedu.routers.ussd import router as ussd_router
 
 from ivhuRedu.services.security import hash_password
 
@@ -46,6 +44,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(farmer_request_router, prefix="/farmer-requests", tags=["Farmer Requests"])
+app.include_router(ussd_router, prefix="/ussd", tags=["USSD"])
+
+
+@app.get("/")
+def read_root():
+    return {"message": "Welcome to the IvhuRedu API", "status": "ok"}
 app.include_router(auth_router.router)
 app.include_router(user_router.router)
 app.include_router(extension_worker_router.router)
@@ -97,6 +102,12 @@ async def onboard_default_admin() -> None:
 
 @app.on_event("startup")
 async def on_startup():
+    async with engine.begin() as conn:
+        try:
+            await conn.run_sync(Base.metadata.create_all)
+            print("Database synchronized successfully.")
+        except Exception as e:
+            print(f"Notice: Table creation skipped due to uninitialized peer schemas: {e}")
     await onboard_default_admin()
 
 @app.get("/")

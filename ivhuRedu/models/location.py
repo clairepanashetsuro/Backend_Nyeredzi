@@ -15,6 +15,8 @@ class Location(Base):
     longitude = Column(Float, nullable=False)
     address = Column(String(250), nullable=False)
     display_name = Column(String(250), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
     created_at = Column(DateTime(timezone=True),server_default=func.now(),nullable=False,)
     updated_at = Column(DateTime(timezone=True),server_default=func.now(),onupdate=func.now(),nullable=False,)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)

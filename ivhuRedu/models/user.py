@@ -33,7 +33,6 @@ class User(Base):
 
     extension_worker = relationship("ExtensionWorker", back_populates="user", uselist=False)
     farmer = relationship("Farmer", back_populates="user", uselist=False)
-     
-
-
+    requests = relationship("FarmerRequest", foreign_keys="FarmerRequest.farmer_id", back_populates="farmer")
+    assigned_requests = relationship("FarmerRequest", foreign_keys="FarmerRequest.assigned_worker_id", back_populates="assigned_worker")
 
