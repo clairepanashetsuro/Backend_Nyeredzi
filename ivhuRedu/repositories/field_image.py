@@ -11,7 +11,11 @@ class FieldImageRepository:
         self.db = db
 
     async def create(self, data: ReportImageCreate) -> ReportImage:
-        img = ReportImage(**data.model_dump())
+       
+        img = ReportImage(
+            report_id=data.report_id,
+            image_url=data.file_url
+        )
         self.db.add(img)
         await self.db.commit()
         await self.db.refresh(img)
@@ -34,7 +38,12 @@ class FieldImageRepository:
         if not img:
             return None
 
-        for key, value in data.model_dump(exclude_unset=True).items():
+        
+        update_data = data.model_dump(exclude_unset=True)
+        if "file_url" in update_data:
+            update_data["image_url"] = update_data.pop("file_url")
+
+        for key, value in update_data.items():
             setattr(img, key, value)
 
         await self.db.commit()
