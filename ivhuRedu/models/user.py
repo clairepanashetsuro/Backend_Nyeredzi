@@ -30,12 +30,10 @@ class User(Base):
     is_locked = Column(Boolean, default=False, nullable=False)
     locked_until = Column(DateTime(timezone=True), nullable=True)
 
+
     extension_worker = relationship("ExtensionWorker", back_populates="user", uselist=False)
     farmer = relationship("Farmer", back_populates="user", uselist=False)
      
 
-
-    # farmer = relationship("Farmer", back_populates="user", uselist=False)
-    # extension_worker = relationship("ExtensionWorker", back_populates="user", uselist=False)
 
 
