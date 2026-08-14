@@ -30,15 +30,10 @@ class User(Base):
     is_locked = Column(Boolean, default=False, nullable=False)
     locked_until = Column(DateTime(timezone=True), nullable=True)
 
-<<<<<<< HEAD
+
     extension_worker = relationship("ExtensionWorker", back_populates="user", uselist=False)
     farmer = relationship("Farmer", back_populates="user", uselist=False)
      
 
-
-=======
->>>>>>> caadafe (Merge pull request #5 from akirachix/feature/NYER-229-Location-endpoints)
-    # farmer = relationship("Farmer", back_populates="user", uselist=False)
-    # extension_worker = relationship("ExtensionWorker", back_populates="user", uselist=False)
 
 
