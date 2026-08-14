@@ -22,13 +22,13 @@ load_dotenv()
 logger = logging.getLogger("uvicorn.error")
 
 app = FastAPI(
-    title="IvhuRedu API",
-    version="1",
+    title="IvhuRedu Agricultural Platform API",
+    version="1.0.0",
 )
 
 allowed_origins = os.getenv(
     "ALLOWED_ORIGINS",
-    "",
+    "*",
 ).split(",")
 
 app.add_middleware(
@@ -38,19 +38,10 @@ app.add_middleware(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,
+    allow_origins=allowed_origins if allowed_origins != [""] else ["*"],
     allow_credentials=True,
-    allow_methods=[
-        "GET",
-        "POST",
-        "PUT",
-        "DELETE",
-        "PATCH",
-    ],
-    allow_headers=[
-        "Authorization",
-        "Content-Type",
-    ],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(farmer_request_router, prefix="/farmer-requests", tags=["Farmer Requests"])
@@ -60,7 +51,11 @@ app.include_router(ussd_router, prefix="/ussd", tags=["USSD"])
 @app.get("/")
 def read_root():
     return {"message": "Welcome to the IvhuRedu API", "status": "ok"}
-
+app.include_router(auth_router.router)
+app.include_router(user_router.router)
+app.include_router(extension_worker_router.router)
+app.include_router(farmer_router.router)
+app.include_router(location_router)
 
 async def onboard_default_admin() -> None:
     admin_phone = os.getenv("ADMIN_PHONE_NUMBER")
@@ -105,7 +100,6 @@ async def onboard_default_admin() -> None:
         await db.commit()
         logger.info("Default administrator account created.")
 
-
 @app.on_event("startup")
 async def on_startup():
     async with engine.begin() as conn:
@@ -116,7 +110,7 @@ async def on_startup():
             print(f"Notice: Table creation skipped due to uninitialized peer schemas: {e}")
     await onboard_default_admin()
 
-
+@app.get("/")
 @app.get("/health")
 async def health_check():
     return {

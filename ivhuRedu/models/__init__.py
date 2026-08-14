@@ -17,6 +17,8 @@ __all__ = [
     "Location",
 ]
 
+from ivhuRedu.models.user import User
+
 from .user import User, UserType
 from .farmer import Farmer
 from .extension_worker import ExtensionWorker
@@ -35,5 +37,11 @@ __all__ = [
     "FarmerRequest",
     "FieldImage",
     "Location",
+]
+
+__all__ = [
+    "Base",
+    "Location",
+    "User",
 ]
 
