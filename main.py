@@ -2,6 +2,8 @@ import logging
 import os
 
 from dotenv import load_dotenv
+load_dotenv()
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import select
@@ -14,10 +16,13 @@ from ivhuRedu.models.farmer_request import FarmerRequest
 
 from ivhuRedu.routers.farmer_request import router as farmer_request_router
 from ivhuRedu.routers.ussd import router as ussd_router
+from ivhuRedu.routers.auth import router as auth_router
+from ivhuRedu.routers.user import router as user_router
+from ivhuRedu.routers.extension_worker import router as extension_worker_router
+from ivhuRedu.routers.farmer import router as farmer_router
+from ivhuRedu.routers.location import router as location_router
 
 from ivhuRedu.services.security import hash_password
-
-load_dotenv()
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -46,16 +51,16 @@ app.add_middleware(
 
 app.include_router(farmer_request_router, prefix="/farmer-requests", tags=["Farmer Requests"])
 app.include_router(ussd_router, prefix="/ussd", tags=["USSD"])
+app.include_router(auth_router, prefix="/auth", tags=["Authentication"])
+app.include_router(user_router, prefix="/users", tags=["Users"])
+app.include_router(extension_worker_router, prefix="/extension-workers", tags=["Extension Workers"])
+app.include_router(farmer_router, prefix="/farmers", tags=["Farmers"])
+app.include_router(location_router, prefix="/locations", tags=["Locations"])
 
 
 @app.get("/")
 def read_root():
     return {"message": "Welcome to the IvhuRedu API", "status": "ok"}
-app.include_router(auth_router.router)
-app.include_router(user_router.router)
-app.include_router(extension_worker_router.router)
-app.include_router(farmer_router.router)
-app.include_router(location_router)
 
 async def onboard_default_admin() -> None:
     admin_phone = os.getenv("ADMIN_PHONE_NUMBER")
@@ -110,7 +115,6 @@ async def on_startup():
             print(f"Notice: Table creation skipped due to uninitialized peer schemas: {e}")
     await onboard_default_admin()
 
-@app.get("/")
 @app.get("/health")
 async def health_check():
     return {
