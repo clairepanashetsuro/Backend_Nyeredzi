@@ -1,35 +1,23 @@
 .env
-# Cache files
-__pycache__/
-
-# Virtual environments
-env/
-.env/
-.venv/
-
-
-
-# Environment variables /
-.env
 .env.local
-.env.*.local
-
-# Testing
-.pytest_cache/
-.coverage
-htmlcov/
-.tox/
-
-# IDE / editor
-.vscode/
-
-# Database
+.env.production
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
 *.db
+*.sqlite
 *.sqlite3
+.vscode/
+.idea/
+.env
+.env.*
+!.env.example
 
-# Logs
-*.log
-logs/
+__pycache__/
+*.pyc
 
-# FastAPI / uvicorn
-*.pid
+ivhuRedu/logs/*.log

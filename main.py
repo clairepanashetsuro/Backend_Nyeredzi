@@ -1,26 +1,53 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
-from ivhuRedu.routers.broadcasts import router as broadcasts_router
-from ivhuRedu.routers.location import router as location_router
-from ivhuRedu.services.sms_leopard import send_sms
+import os
 from dotenv import load_dotenv
+
 load_dotenv()
 
-app = FastAPI(title="IvhuRedu Agricultural Platform API", version="1.0.0")
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from ivhuRedu.routers.sms import router as sms_router
 
-app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
+app = FastAPI(
+    title="IvhuRedu SMS & OTP Gateway",
+    version="1.0.0",
+    docs_url="/docs" if os.getenv("APP_ENV") == "development" else None,
+)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=os.getenv("CORS_ORIGINS", "http://localhost:3000").split(","),
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
     allow_headers=["*"],
 )
 
-app.include_router(broadcasts_router)
-app.include_router(location_router)
+app.include_router(sms_router)
 
-@app.get("/")
-async def root():
-    return {"status": "ok"}
+try:
+    from ivhuRedu.routers.location import router as location_router
+    app.include_router(location_router)
+except ImportError:
+    pass
+
+try:
+    from ivhuRedu.routers.user import router as user_router
+    app.include_router(user_router)
+except ImportError:
+    pass
+
+try:
+    from ivhuRedu.routers.field_report import router as field_report_router
+    app.include_router(field_report_router)
+except ImportError:
+    pass
+
+try:
+    from ivhuRedu.routers.field_image import router as field_image_router
+    app.include_router(field_image_router)
+except ImportError:
+    pass
+
+
+@app.get("/health")
+def health_check():
+    return {"status": "ok", "service": "sms-otp-gateway"}
