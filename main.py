@@ -13,7 +13,8 @@ from database import async_session, engine, Base
 
 from ivhuRedu.models import User, UserType
 from ivhuRedu.models.farmer_request import FarmerRequest
-
+from ivhuRedu.models.field_image import FieldImage
+from ivhuRedu.routers.field_image import router as field_image_router
 from ivhuRedu.routers.farmer_request import router as farmer_request_router
 from ivhuRedu.routers.ussd import router as ussd_router
 from ivhuRedu.routers.auth import router as auth_router
@@ -56,7 +57,7 @@ app.include_router(user_router, prefix="/users", tags=["Users"])
 app.include_router(extension_worker_router, prefix="/extension-workers", tags=["Extension Workers"])
 app.include_router(farmer_router, prefix="/farmers", tags=["Farmers"])
 app.include_router(location_router, prefix="/locations", tags=["Locations"])
-
+app.include_router(field_image_router)
 
 @app.get("/")
 def read_root():
