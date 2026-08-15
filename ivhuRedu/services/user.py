@@ -52,7 +52,6 @@ async def create_user(
     data: UserCreate,
     user_type: UserType,
 ):
-    # Check for duplicate email.
     if data.email:
         existing_email = (
             await user_repository.get_by_email(

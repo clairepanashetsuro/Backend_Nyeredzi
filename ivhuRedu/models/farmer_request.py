@@ -3,6 +3,7 @@ import uuid
 
 from sqlalchemy import Column, DateTime, Integer, String, ForeignKey, Float, Text, Index
 from sqlalchemy import Column, DateTime, Enum, ForeignKey, Text , Float
+from sqlalchemy import Column, DateTime, Enum, ForeignKey, Text, Float
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -49,3 +50,16 @@ class FarmerRequest(Base):
         Index("ix_farmer_requests_status", "status"),
     )
 
+    farmer_id = Column(PG_UUID(as_uuid=True), ForeignKey("farmers.farmer_id", ondelete="SET NULL"), nullable=True)
+    worker_id = Column(PG_UUID(as_uuid=True), ForeignKey("extension_workers.worker_id", ondelete="SET NULL"), nullable=True)
+    request_type = Column(Enum(RequestType, name="request_type"), nullable=False)
+    ussd_input_text = Column(Text, nullable=True)
+    distance_m = Column(Float, nullable=True)
+    status = Column(Enum(RequestStatus, name="request_status"), nullable=False, default=RequestStatus.PENDING, server_default=RequestStatus.PENDING.value)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    resolved_at = Column(DateTime(timezone=True), nullable=True)
+    
+    farmer = relationship("Farmer", back_populates="requests")
+    field_reports = relationship("FieldReport", back_populates="farmer_request")
+    extension_worker = relationship("ExtensionWorker", back_populates="farmer_requests")
