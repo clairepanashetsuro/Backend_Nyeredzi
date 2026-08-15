@@ -1,4 +1,5 @@
 from typing import List, Optional
+from fastapi import Query
 from pydantic import BaseModel, Field
 
 
@@ -63,3 +64,21 @@ class SMSCallbackPayload(BaseModel):
     event: str
     message_id: str
     status: str
+
+
+class SMSLogFilters:
+    def __init__(
+        self,
+        status: Optional[str] = Query(None),
+        message_type: Optional[str] = Query(None),
+        phone_number: Optional[str] = Query(None),
+        sender_id: Optional[str] = Query(None),
+        ip_address: Optional[str] = Query(None),
+        older_than_days: Optional[int] = Query(None),
+    ):
+        self.status = status
+        self.message_type = message_type
+        self.phone_number = phone_number
+        self.sender_id = sender_id
+        self.ip_address = ip_address
+        self.older_than_days = older_than_days

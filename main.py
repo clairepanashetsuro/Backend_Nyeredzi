@@ -1,9 +1,17 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from ivhuRedu.routers.sms import router as sms_router
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from ivhuRedu.routers.sms import router as sms_router
 
 app = FastAPI(
-    title="Nyeredzi SMS Gateway Component Gateway Service Platform",
+    title="Ivhuredu SMS Gateway Component Gateway Service Platform",
     version="1.0.0"
 )
 
@@ -16,4 +24,3 @@ app.add_middleware(
 )
 
 app.include_router(sms_router)
-
