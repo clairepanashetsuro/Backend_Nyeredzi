@@ -4,6 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from database import get_db
+from dependency import get_db, get_current_user
+
 
 
 from ivhuRedu.models.user import User, UserType
