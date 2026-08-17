@@ -7,7 +7,7 @@ from pydantic import BaseModel
 class FarmerRequestBase(BaseModel):
     phone_number: str
     request_type: str
-    status: Optional[str] = "pending"
+    status: Optional[str] = "PENDING"
     ussd_session_id: Optional[str] = None
     description: Optional[str] = None
     location: Optional[str] = None

@@ -1,8 +1,8 @@
+from ivhuRedu.database import Base
 import uuid
 from sqlalchemy import Column, String, DateTime, ForeignKey, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from database import Base
 
 class FieldImage(Base):
     __tablename__ = "field_images"

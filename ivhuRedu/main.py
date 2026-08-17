@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
-from ivhuRedu.database import Base, engine, init_db 
+from ivhuRedu.database import Base, engine, init_db
 
 # Keep model mappings intact for SQLAlchemy discovery
 from ivhuRedu.models.user import User
@@ -14,11 +14,15 @@ from ivhuRedu.models.farmer import Farmer
 from ivhuRedu.models.extension_worker import ExtensionWorker
 from ivhuRedu.models.farmer_request import FarmerRequest
 from ivhuRedu.models.field_report import FieldReport
+from ivhuRedu.models.field_image import FieldImage
 from ivhuRedu.models.location import Location
+from ivhuRedu.models.ussd import USSDSession
 
 # Route entrypoint file imports
 from ivhuRedu.routers.field_report import router as field_report_router
 from ivhuRedu.routers.field_image import router as field_image_router
+from ivhuRedu.routers.farmer_request import router as farmer_request_router
+from ivhuRedu.routers.ussd import router as ussd_router
 from ivhuRedu.routers import auth as auth_router
 from ivhuRedu.routers import user as user_router
 from ivhuRedu.routers import extension_worker as extension_worker_router
@@ -28,11 +32,13 @@ from ivhuRedu.routers.location import router as location_router
 load_dotenv()
 logger = logging.getLogger("uvicorn.error")
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Initializes connection pools safely
     await init_db()
     yield
+
 
 app = FastAPI(
     title="IvhuRedu Agricultural Platform API",
@@ -58,15 +64,19 @@ app.add_middleware(
 # Clean, ordered decoupled router installations
 app.include_router(field_report_router)
 app.include_router(field_image_router)
+app.include_router(farmer_request_router)
+app.include_router(ussd_router)
 app.include_router(auth_router.router)
 app.include_router(user_router.router)
 app.include_router(extension_worker_router.router)
 app.include_router(farmer_router.router)
 app.include_router(location_router)
 
+
 @app.get("/")
 def read_root():
     return {"message": "Welcome to the IvhuRedu API", "status": "ok"}
+
 
 @app.get("/health")
 async def health_check():

@@ -25,7 +25,7 @@ from ivhuRedu.services import (
 
 router = APIRouter(
     prefix="/extension-workers",
-    tags=["extension-workers"],
+    tags=["Extension Workers"],
 )
 
 

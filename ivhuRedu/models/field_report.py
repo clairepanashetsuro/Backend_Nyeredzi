@@ -1,10 +1,10 @@
+from ivhuRedu.database import Base
 import enum
 import uuid
 from sqlalchemy import Column, DateTime, Enum as SqlEnum, ForeignKey, Text
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-from database import Base
 
 class IssueType(str, enum.Enum):
     LAND_DEGRADATION = "Land Degradation"
@@ -12,11 +12,11 @@ class IssueType(str, enum.Enum):
     CROP_FAILURE = "Crop Failure"
 
 class SyncStatus(str, enum.Enum):
-    PENDING_SYNC = "pending_sync"
+    PENDING_SYNC = "PENDING_SYNC"
     SYNCED = "synced"
 
 class StatusEnum(str, enum.Enum):
-    PENDING = "pending"
+    PENDING = "PENDING"
     COMPLETED = "completed"
     ERROR = "error"
 
@@ -46,7 +46,7 @@ class FieldReport(Base):
         SqlEnum(SyncStatus, name="sync_status_enum"), 
         nullable=False, 
         default=SyncStatus.PENDING_SYNC,
-        server_default="pending_sync"
+        server_default="PENDING_SYNC"
     )
     status = Column(
         SqlEnum(StatusEnum, name="status_enum"),

@@ -16,7 +16,7 @@ class FarmerRequestService:
             "phone_number": request_in.phone_number,
             "request_type": request_in.request_type,
             "ussd_session_id": request_in.ussd_session_id,
-            "status": request_in.status or "pending",
+            "status": request_in.status or "PENDING",
             "description": request_in.description,
             "location": request_in.location,
             "farmer_id": request_in.farmer_id
@@ -30,7 +30,7 @@ class FarmerRequestService:
                 "phone_number": req_in.phone_number,
                 "request_type": req_in.request_type,
                 "ussd_session_id": req_in.ussd_session_id,
-                "status": req_in.status or "pending",
+                "status": req_in.status or "PENDING",
                 "description": req_in.description,
                 "location": req_in.location,
                 "farmer_id": req_in.farmer_id

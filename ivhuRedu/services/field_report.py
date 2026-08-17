@@ -1,67 +1,75 @@
 from uuid import UUID
 from datetime import datetime, timezone
-from fastapi import HTTPException, status, Depends
+from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ivhuRedu.database import get_db
 from ivhuRedu.models.field_report import StatusEnum, SyncStatus
-from ivhuRedu.repositories.field_report import field_report_repository
+from ivhuRedu.repositories.field_report import FieldReportRepository
 from ivhuRedu.schemas.field_report import FieldReportCreate, FieldReportUpdate
+
 
 class FieldReportService:
 
-    @classmethod
-    async def create(cls, report: FieldReportCreate, db: AsyncSession = Depends(get_db)):
-        if not report.description_type or not report.description_type.strip():
+    def __init__(self, db: AsyncSession):
+        self.db = db
+        self.repo = FieldReportRepository(db)
+
+    async def create(self, data: FieldReportCreate):
+        if not data.description_type or not data.description_type.strip():
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, 
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail="description_type is required."
             )
-        
-        report.status = StatusEnum.PENDING
-        report.timestamp_synced = None
 
-        return await field_report_repository.create(db, report)
+        data.status = StatusEnum.PENDING
+        data.timestamp_synced = None
 
-    @classmethod
-    async def get_all(cls, db: AsyncSession = Depends(get_db)):
-        return await field_report_repository.get_all(db)
+        return await self.repo.create(data)
 
-    @classmethod
-    async def get_by_id(cls, report_id: UUID, db: AsyncSession = Depends(get_db)):
-        report = await field_report_repository.get_by_id(db, report_id)
+    async def get_all(self, current_user):
+        if current_user.role == "admin":
+            return await self.repo.get_all()
+        return await self.repo.get_by_worker(current_user.id)
+
+    async def get_by_id(self, report_id: UUID, current_user):
+        report = await self.repo.get_by_id(report_id)
         if not report:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, 
+                status_code=status.HTTP_404_NOT_FOUND,
                 detail="Field report not found"
+            )
+        if current_user.role != "admin" and report.worker_id != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Not authorized to access this report"
             )
         return report
 
-    @classmethod
-    async def get_by_worker(cls, worker_id: UUID, db: AsyncSession = Depends(get_db)):
-        return await field_report_repository.get_by_worker(db, worker_id)
-
-    @classmethod
-    async def update(cls, report_id: UUID, report: FieldReportUpdate, db: AsyncSession = Depends(get_db)):
-        await cls.get_by_id(report_id, db)
-
-        if report.description_type is not None and not report.description_type.strip():
+    async def get_by_worker(self, worker_id: UUID, current_user):
+        if current_user.role != "admin" and worker_id != current_user.id:
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, 
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Not authorized to access these reports"
+            )
+        return await self.repo.get_by_worker(worker_id)
+
+    async def update(self, report_id: UUID, data: FieldReportUpdate, current_user):
+        await self.get_by_id(report_id, current_user)
+
+        if data.description_type is not None and not data.description_type.strip():
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail="Description type cannot be empty"
             )
 
-        if report.sync_status == SyncStatus.SYNCED:
-            report.timestamp_synced = datetime.now(timezone.utc)
-            report.status = StatusEnum.COMPLETED
-        elif report.sync_status == SyncStatus.PENDING_SYNC:
-            report.timestamp_synced = None
+        if data.sync_status == SyncStatus.SYNCED:
+            data.timestamp_synced = datetime.now(timezone.utc)
+            data.status = StatusEnum.COMPLETED
+        elif data.sync_status == SyncStatus.PENDING_SYNC:
+            data.timestamp_synced = None
 
-        return await field_report_repository.update(db, report_id, report)
+        return await self.repo.update(report_id, data)
 
-    @classmethod
-    async def delete(cls, report_id: UUID, db: AsyncSession = Depends(get_db)):
-        await cls.get_by_id(report_id, db)
-        return await field_report_repository.delete(db, report_id)
-
-field_report_service = FieldReportService()
+    async def delete(self, report_id: UUID, current_user):
+        await self.get_by_id(report_id, current_user)
+        return await self.repo.delete(report_id)

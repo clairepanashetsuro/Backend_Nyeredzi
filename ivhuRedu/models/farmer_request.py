@@ -1,3 +1,4 @@
+from ivhuRedu.database import Base
 import enum
 import uuid
 
@@ -8,7 +9,6 @@ from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
-from database import Base
 
 
 class RequestType(str, enum.Enum):
@@ -18,7 +18,7 @@ class RequestType(str, enum.Enum):
 
 
 class RequestStatus(str, enum.Enum):
-    PENDING = "pending"
+    PENDING = "PENDING"
     ASSIGNED = "assigned"
     RESOLVED = "resolved"
     CANCELLED = "cancelled"
@@ -35,8 +35,8 @@ class FarmerRequest(Base):
     ussd_session_id = Column(String, nullable=True)
     ussd_input_text = Column(Integer, nullable=True)
     distance_in_meters = Column(Float, nullable=True)
-    sync_status = Column(String, default="pending_sync", nullable=True)
-    status = Column(String, nullable=False, server_default="pending")
+    sync_status = Column(String, default="PENDING_SYNC", nullable=True)
+    status = Column(String, nullable=False, server_default="PENDING")
     description = Column(Text, nullable=True)
     location = Column(String, nullable=True)
     
@@ -55,7 +55,10 @@ class FarmerRequest(Base):
     request_type = Column(Enum(RequestType, name="request_type"), nullable=False)
     ussd_input_text = Column(Text, nullable=True)
     distance_m = Column(Float, nullable=True)
-    status = Column(Enum(RequestStatus, name="request_status"), nullable=False, default=RequestStatus.PENDING, server_default=RequestStatus.PENDING.value)
+    # status = Column(Enum(RequestStatus, name="request_status"), nullable=False, default=RequestStatus.PENDING, server_default=RequestStatus.PENDING.value)
+    status = Column(Enum(RequestStatus), default="PENDING", nullable=False)
+
+
 
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     resolved_at = Column(DateTime(timezone=True), nullable=True)

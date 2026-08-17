@@ -24,7 +24,7 @@ from ivhuRedu.services import user as user_service
 
 router = APIRouter(
     prefix="/users",
-    tags=["users"],
+    tags=["Users"],
 )
 
 

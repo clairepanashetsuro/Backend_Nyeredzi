@@ -29,7 +29,7 @@ from ivhuRedu.services.security import (
 
 router = APIRouter(
     prefix="/auth",
-    tags=["auth"],
+    tags=["Authentication"],
 )
 
 

@@ -5,7 +5,6 @@ from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
-from database import Base
 
 from ivhuRedu.database import Base
 
@@ -18,7 +17,7 @@ class Farmer(Base):
     ward_name = Column(String(100), nullable=False)
     primary_crop = Column (String (50), nullable = True)
     location_id = Column(PG_UUID(as_uuid=True),ForeignKey("location.location_id", ondelete="RESTRICT"),nullable=False,)
-    location_id = Column(PG_UUID(as_uuid=True), ForeignKey("locations.location_id", ondelete="RESTRICT"), nullable=False)
+    location_id = Column(PG_UUID(as_uuid=True), ForeignKey("location.location_id", ondelete="RESTRICT"), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
