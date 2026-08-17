@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Form, Depends
 from fastapi.responses import PlainTextResponse
 from sqlalchemy.ext.asyncio import AsyncSession
+from ivhuRedu.routers.auth import router as auth_router
 
 from database import get_db
 from ivhuRedu.services.ussd import USSDService

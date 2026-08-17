@@ -1,9 +1,9 @@
+from ivhuRedu.database import Base
 import uuid
 import enum
 from sqlalchemy import Boolean, Column, String, DateTime, Enum, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from database import Base
 
 
 class UserType(str, enum.Enum):

@@ -3,8 +3,9 @@ import uuid
 from sqlalchemy import Column, Enum, String, DateTime, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from database import Base
 from sqlalchemy.sql import func
+
+from ivhuRedu.database import Base
 
 class WorkerAvailabilityStatus(str, enum.Enum):
     AVAILABLE = "available"
@@ -21,14 +22,26 @@ class ExtensionWorker(Base):
     hashed_ussd_pincode = Column(String(255), nullable=False)
     assigned_ward_name = Column(String(100), nullable=False)
 
-    availability_status = Column(Enum(WorkerAvailabilityStatus,values_callable=lambda obj: [e.value for e in obj],),nullable=False,default=WorkerAvailabilityStatus.AVAILABLE,)
+    availability_status = Column(
+        Enum(WorkerAvailabilityStatus, values_callable=lambda obj: [e.value for e in obj]), 
+        nullable=False, 
+        default=WorkerAvailabilityStatus.AVAILABLE
+    )
+    
+    # Corrected singular table name
     location_id = Column(UUID(as_uuid=True), ForeignKey("location.location_id"), nullable=False)
+    
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     last_updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
+    # Relationships
     user = relationship("User", back_populates="extension_worker")
-    location = relationship("Location", back_populates="extension_workers")
-    farmer_requests = relationship("FarmerRequest", back_populates="assigned_worker")
+    farmer_requests = relationship("FarmerRequest", back_populates="extension_worker")
     field_reports = relationship("FieldReport", back_populates="extension_worker")
     
+    location = relationship(
+        "Location", 
+        back_populates="extension_workers",
+        primaryjoin="ExtensionWorker.location_id == Location.location_id"
+    )
 

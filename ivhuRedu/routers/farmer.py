@@ -18,7 +18,7 @@ from ivhuRedu.services import farmer as farmer_service
 
 router = APIRouter(
     prefix="/farmers",
-    tags=["farmers"],
+    tags=["Farmers"],
 )
 
 

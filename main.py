@@ -1,84 +1,42 @@
-import logging
-import os
-from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import select
-from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
-from database import async_session, engine, Base
-from ivhuRedu.models import User, UserType
+from ivhuRedu.database import Base, engine
+import asyncio
 
-# Router Imports
+# Force load all database structures via the package init layout
+import ivhuRedu.models
+
 from ivhuRedu.routers.auth import router as auth_router
 from ivhuRedu.routers.user import router as user_router
-from ivhuRedu.routers.extension_worker import router as extension_worker_router
 from ivhuRedu.routers.farmer import router as farmer_router
+from ivhuRedu.routers.extension_worker import router as extension_worker_router
 from ivhuRedu.routers.location import router as location_router
 from ivhuRedu.routers.farmer_request import router as farmer_request_router
+from ivhuRedu.routers.field_image import router as field_image_router
+from ivhuRedu.routers.field_report import router as field_report_router
 from ivhuRedu.routers.ussd import router as ussd_router
 
-try:
-    from ivhuRedu.routers.sms_log import router as sms_log_router
-except ImportError:
-    from ivhuRedu.routers.sms import router as sms_log_router
+app = FastAPI(title="IvhuRedu Platform API", version="1.0.0")
 
-from ivhuRedu.services.security import hash_password
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
-load_dotenv()
-logger = logging.getLogger("uvicorn.error")
-
-app = FastAPI(title="IvhuRedu Agricultural Platform API", version="1.0.0")
-
-allowed_origins = os.getenv("ALLOWED_ORIGINS", "*").split(",")
-app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=allowed_origins if allowed_origins != [""] else ["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Cleaned Router Inclusions
-app.include_router(auth_router, tags=["auth"])
-app.include_router(user_router, tags=["users"])
-app.include_router(extension_worker_router, tags=["extension-workers"])
-app.include_router(farmer_router, tags=["farmers"])
-app.include_router(location_router, tags=["Locations"])
-
-# Re-added clean structural prefixes for bare endpoint modules
-app.include_router(farmer_request_router, prefix="/farmer-requests", tags=["Farmer Requests"])
-
-# FIX: Mount USSD and SMS without double tags or conflicting prefixes
-app.include_router(ussd_router, prefix="/ussd", tags=["USSD"])
-app.include_router(sms_log_router)
-
-@app.get("/", tags=["System"])
-@app.get("/health", tags=["System"])
-async def health_check():
-    return {"status": "ok", "message": "Welcome to the IvhuRedu API"}
-
-async def onboard_default_admin() -> None:
-    admin_phone = os.getenv("ADMIN_PHONE_NUMBER")
-    admin_password = os.getenv("ADMIN_PASSWORD")
-    if not admin_phone or not admin_password:
-        return
-    async with async_session() as db:
-        result = await db.execute(select(User).where(User.user_type == UserType.ADMIN))
-        if result.scalar_one_or_none():
-            return
-        admin = User(
-            first_name=os.getenv("ADMIN_FIRST_NAME", "System"),
-            last_name=os.getenv("ADMIN_LAST_NAME", "Administrator"),
-            phone_number=admin_phone,
-            email=os.getenv("ADMIN_EMAIL"),
-            hashed_password=hash_password(admin_password),
-            user_type=UserType.ADMIN,
-            must_change_password=False,
-        )
-        db.add(admin)
-        await db.commit()
+async def init_tables():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
 
 @app.on_event("startup")
 async def on_startup():
-    await onboard_default_admin()
+    await init_tables()
+
+app.include_router(auth_router, prefix="/auth", tags=["Authentication"])
+app.include_router(user_router, prefix="/users", tags=["Users"])
+app.include_router(farmer_router, prefix="/farmers", tags=["Farmers"])
+app.include_router(extension_worker_router, prefix="/extension-workers", tags=["Extension Workers"])
+app.include_router(location_router, prefix="/locations", tags=["Locations"])
+app.include_router(farmer_request_router, prefix="/farmer-requests", tags=["Farmer Requests"])
+app.include_router(field_image_router, prefix="/field-images", tags=["Field Images"])
+app.include_router(field_report_router, prefix="/field-reports", tags=["Field Reports"])
+app.include_router(ussd_router, prefix="/ussd", tags=["USSD"])
+
+@app.get("/")
+def read_root(): return {"status": "Active"}

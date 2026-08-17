@@ -95,7 +95,7 @@ class USSDService:
                 phone_number=phone_number,
                 request_type=request_type,
                 ussd_session_id=session_id,
-                status="pending",
+                status="PENDING",
             )
             self.db.add(db_request)
             await self.db.commit()

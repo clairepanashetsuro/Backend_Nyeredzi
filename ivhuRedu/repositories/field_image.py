@@ -1,7 +1,7 @@
 from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from ivhuRedu.models.field_image import ReportImage
+from ivhuRedu.models.field_image import FieldImage
 from ivhuRedu.schemas.field_image import ReportImageCreate, ReportImageUpdate
 
 
@@ -10,9 +10,9 @@ class FieldImageRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def create(self, data: ReportImageCreate) -> ReportImage:
+    async def create(self, data: ReportImageCreate) -> FieldImage:
        
-        img = ReportImage(
+        img = FieldImage(
             report_id=data.report_id,
             image_url=data.file_url
         )
@@ -21,19 +21,19 @@ class FieldImageRepository:
         await self.db.refresh(img)
         return img
 
-    async def get_by_id(self, image_id: UUID) -> ReportImage | None:
+    async def get_by_id(self, image_id: UUID) -> FieldImage | None:
         result = await self.db.execute(
-            select(ReportImage).filter(ReportImage.image_id == image_id)
+            select(FieldImage).filter(FieldImage.image_id == image_id)
         )
         return result.scalars().first()
 
-    async def get_by_report_id(self, report_id: UUID) -> list[ReportImage]:
+    async def get_by_report_id(self, report_id: UUID) -> list[FieldImage]:
         result = await self.db.execute(
-            select(ReportImage).filter(ReportImage.report_id == report_id)
+            select(FieldImage).filter(FieldImage.report_id == report_id)
         )
         return list(result.scalars().all())
 
-    async def update(self, image_id: UUID, data: ReportImageUpdate) -> ReportImage | None:
+    async def update(self, image_id: UUID, data: ReportImageUpdate) -> FieldImage | None:
         img = await self.get_by_id(image_id)
         if not img:
             return None

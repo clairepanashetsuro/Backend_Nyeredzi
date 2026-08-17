@@ -4,6 +4,7 @@ from typing import List
 from fastapi import APIRouter, Depends, status, Form
 from fastapi.responses import PlainTextResponse
 from sqlalchemy.orm import Session
+from ivhuRedu.routers.auth import router as auth_router
 
 from database import get_db
 from ivhuRedu.services.farmer_request import FarmerRequestService
