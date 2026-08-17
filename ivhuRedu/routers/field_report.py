@@ -1,13 +1,8 @@
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, Depends, status
 
-from ivhuRedu.database import get_db
-from ivhuRedu.repositories.field_report import field_report_repository
-
+from ivhuRedu.services.field_report import field_report_service  
 from ivhuRedu.schemas.field_report import (
-    FieldReportCreate,
-    FieldReportUpdate,
     FieldReportResponse,
 )
 
@@ -19,57 +14,41 @@ router = APIRouter(
 
 @router.post("/", response_model=FieldReportResponse, status_code=status.HTTP_201_CREATED)
 async def create_field_report(
-    report: FieldReportCreate,
-    db: AsyncSession = Depends(get_db),
+    report: FieldReportResponse = Depends(field_report_service.create),
 ):
-    return await field_report_repository.create(db, report)
+    return report
 
 
 @router.get("/", response_model=list[FieldReportResponse])
 async def get_field_reports(
-    db: AsyncSession = Depends(get_db),
+    reports: list[FieldReportResponse] = Depends(field_report_service.get_all),
 ):
-    return await field_report_repository.get_all(db)
+    return reports
 
 
 @router.get("/{report_id}", response_model=FieldReportResponse)
 async def get_field_report(
-    report_id: UUID,
-    db: AsyncSession = Depends(get_db),
+    report: FieldReportResponse = Depends(field_report_service.get_by_id),
 ):
-    report = await field_report_repository.get_by_id(db, report_id)
-    if not report:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Field report not found",
-        )
     return report
+
+
+@router.get("/worker/{worker_id}", response_model=list[FieldReportResponse])
+async def get_field_reports_by_worker(
+    reports: list[FieldReportResponse] = Depends(field_report_service.get_by_worker),
+):
+    return reports
 
 
 @router.patch("/{report_id}", response_model=FieldReportResponse)
 async def update_field_report(
-    report_id: UUID,
-    report: FieldReportUpdate,
-    db: AsyncSession = Depends(get_db),
+    updated_report: FieldReportResponse = Depends(field_report_service.update),
 ):
-    updated_report = await field_report_repository.update(db, report_id, report)
-    if not updated_report:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Field report not found",
-        )
     return updated_report
 
 
 @router.delete("/{report_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_field_report(
-    report_id: UUID,
-    db: AsyncSession = Depends(get_db),
+    _ = Depends(field_report_service.delete),
 ):
-    deleted = await field_report_repository.delete(db, report_id)
-    if not deleted:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Field report not found",
-        )
     return None

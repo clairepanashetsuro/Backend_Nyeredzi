@@ -8,6 +8,7 @@ from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 from ivhuRedu.database import Base, engine, init_db 
 
+# Keep model mappings intact for SQLAlchemy discovery
 from ivhuRedu.models.user import User
 from ivhuRedu.models.farmer import Farmer
 from ivhuRedu.models.extension_worker import ExtensionWorker
@@ -15,6 +16,7 @@ from ivhuRedu.models.farmer_request import FarmerRequest
 from ivhuRedu.models.field_report import FieldReport
 from ivhuRedu.models.location import Location
 
+# Route entrypoint file imports
 from ivhuRedu.routers.field_report import router as field_report_router
 from ivhuRedu.routers.field_image import router as field_image_router
 from ivhuRedu.routers import auth as auth_router
@@ -28,6 +30,7 @@ logger = logging.getLogger("uvicorn.error")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Initializes connection pools safely
     await init_db()
     yield
 
@@ -52,9 +55,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Clean, ordered decoupled router installations
 app.include_router(field_report_router)
 app.include_router(field_image_router)
-
 app.include_router(auth_router.router)
 app.include_router(user_router.router)
 app.include_router(extension_worker_router.router)
