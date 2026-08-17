@@ -5,10 +5,10 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from database import Base
 
-class IssueType(str, enum.Enum):
-    LAND_DEGRADATION = "land_degradation"
-    PEST_OUTBREAK = "pest_outbreak"
-    CROP_FAILURE = "crop_failure"
+class IssueType(str,enum.Enum):
+    LAND_DEGRADATION = "Land Degradation"
+    PEST_OUTBREAK= "Pest Outbreak"
+    CROP_FAILURE = "Crop Failure"
 
 
 class SyncStatus(str, enum.Enum):
@@ -18,11 +18,11 @@ class SyncStatus(str, enum.Enum):
 class FieldReport(Base):
     __tablename__ = "field_reports"
 
-    report_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    report_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     worker_id = Column(UUID(as_uuid=True), ForeignKey("extension_workers.worker_id"), nullable=False)
     farmer_id = Column(UUID(as_uuid=True), ForeignKey("farmers.farmer_id"), nullable=True)
     related_request_id = Column(UUID(as_uuid=True), ForeignKey("farmer_requests.request_id"), nullable=True)
-
+    sync_status = Column(Enum(SyncStatus),nullable=False,default=SyncStatus.PENDING_SYNC,server_default=SyncStatus.PENDING_SYNC.value,)
     issue_type = Column(Enum(IssueType), nullable=True)
     report_details = Column(Text, nullable=True)
     ussd_description = Column(Text, nullable=True)
@@ -34,4 +34,4 @@ class FieldReport(Base):
     extension_worker = relationship("ExtensionWorker", back_populates="field_reports")
     farmer = relationship("Farmer", back_populates="field_reports")
     farmer_request = relationship("FarmerRequest", back_populates="field_reports")
-    images = relationship("FieldImage", back_populates="field_report",cascade="all, delete-orphan",)
+    images = relationship("FieldImage",back_populates="field_report",cascade="all, delete-orphan",)
