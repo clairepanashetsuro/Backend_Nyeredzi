@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ivhuRedu.repositories.field_image import FieldImageRepository
 from ivhuRedu.schemas.field_image import ReportImageCreate, ReportImageResponse
-from ivhuRedu.utils.crypto import encrypt_file_data, decrypt_file_data  
+from utils.crypto import encrypt_file_data, decrypt_file_data  
 
 SECURE_STORAGE_DIR = os.path.join(os.getcwd(), "secure_storage")
 os.makedirs(SECURE_STORAGE_DIR, exist_ok=True)

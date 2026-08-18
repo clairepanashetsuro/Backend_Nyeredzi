@@ -64,9 +64,10 @@ async def create_farmer(
     try:
         await db.commit()
 
-        await db.refresh(farmer)
-
-        return farmer
+        return await get_farmer(
+            db=db,
+            farmer_id=farmer.farmer_id,
+        )
 
     except IntegrityError:
         await db.rollback()
@@ -90,7 +91,8 @@ async def get_farmer(
     result = await db.execute(
         select(Farmer)
         .options(
-            selectinload(Farmer.user)
+            selectinload(Farmer.user),
+            selectinload(Farmer.location),
         )
         .where(
             Farmer.farmer_id == farmer_id

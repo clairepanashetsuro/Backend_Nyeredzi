@@ -67,7 +67,7 @@ async def create_extension_worker(
         email=data.email,
 
 
-        hashed_password=hash_password(
+        hashed_password=await hash_password(
             data.password
         ),
 
@@ -87,7 +87,7 @@ async def create_extension_worker(
         user_id=user.id,
 
         # USSD PIN must also be hashed
-        hashed_ussd_pincode=hash_password(
+        hashed_ussd_pincode=await hash_password(
             data.ussd_pincode
         ),
 
@@ -245,7 +245,7 @@ async def update_extension_worker(
 
         elif field == "password":
 
-            user.hashed_password = hash_password(
+            user.hashed_password = await hash_password(
                 value
             )
 
@@ -266,7 +266,7 @@ async def update_extension_worker(
 
         elif field == "ussd_pincode":
 
-            worker.hashed_ussd_pincode = hash_password(
+            worker.hashed_ussd_pincode = await hash_password(
                 value
             )
 

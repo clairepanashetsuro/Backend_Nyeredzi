@@ -1,9 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from ivhuRedu.database import Base, engine
+from database import Base, engine
 import asyncio
 
-# Force load all database structures via the package init layout
 import ivhuRedu.models
 
 from ivhuRedu.routers.auth import router as auth_router
@@ -15,6 +14,7 @@ from ivhuRedu.routers.farmer_request import router as farmer_request_router
 from ivhuRedu.routers.field_image import router as field_image_router
 from ivhuRedu.routers.field_report import router as field_report_router
 from ivhuRedu.routers.ussd import router as ussd_router
+from ivhuRedu.routers.sms import router as sms_router
 
 app = FastAPI(title="IvhuRedu Platform API", version="1.0.0")
 
@@ -37,6 +37,7 @@ app.include_router(farmer_request_router, prefix="/farmer-requests", tags=["Farm
 app.include_router(field_image_router, prefix="/field-images", tags=["Field Images"])
 app.include_router(field_report_router, prefix="/field-reports", tags=["Field Reports"])
 app.include_router(ussd_router, prefix="/ussd", tags=["USSD"])
+app.include_router(sms_router, tags=["SMS"])
 
 @app.get("/")
 def read_root(): return {"status": "Active"}

@@ -1,4 +1,4 @@
-from ivhuRedu.database import Base
+from database import Base
 import enum
 import uuid
 from sqlalchemy import Column, DateTime, Enum as SqlEnum, ForeignKey, Text
