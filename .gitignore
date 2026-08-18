@@ -1,3 +1,4 @@
+
 .env
 .env.local
 .env.production
@@ -68,3 +69,24 @@ keys/jwt_private.pem
 
 # JWT keys
 keys/keys/
+keys/
+# Alembic
+alembic/
+alembic.ini
+.alembic/
+
+# JWT / private keys
+keys/
+*.pem
+.env
+.env.*
+!.env.example
+
+# Alembic
+alembic/
+alembic.ini
+.alembic/
+
+# JWT / private keys
+keys/
+*.pem
