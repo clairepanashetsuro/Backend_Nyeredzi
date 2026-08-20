@@ -6,9 +6,13 @@ from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_
 from uuid import UUID
-
+from ivhuRedu.models.extension_worker import ExtensionWorker
 from ivhuRedu.models.location import Location
+from ivhuRedu.models.user import User
+from ivhuRedu.models.farmer import Farmer
 from ivhuRedu.schemas.location import LocationCreate, LocationUpdate, LocationGeocodeRequest
+
+
 
 
 class LocationService:
@@ -156,9 +160,7 @@ class LocationService:
         )
 
     async def find_nearby_workers(self, lat: float, lng: float, radius_km: float, skill: Optional[str] = None):
-        from ivhuRedu.models.extension_worker import ExtensionWorker
-        from ivhuRedu.models.location import Location
-        from ivhuRedu.models.user import User
+       
 
         query = (
             select(ExtensionWorker, Location, User)
@@ -189,9 +191,7 @@ class LocationService:
         return {"workers": nearby, "count": len(nearby)}
 
     async def find_nearby_farmers(self, lat: float, lng: float, radius_km: float, crop_type: Optional[str] = None):
-        from ivhuRedu.models.farmer import Farmer
-        from ivhuRedu.models.location import Location
-        from ivhuRedu.models.user import User
+
 
         query = (
             select(Farmer, Location, User)
@@ -231,8 +231,7 @@ class LocationService:
         ward: Optional[str] = None,
         skill: Optional[str] = None,
     ):
-        from ivhuRedu.models.user import User
-        from ivhuRedu.models.extension_worker import ExtensionWorker
+      
 
         if role in ("agritex_worker", "extension_worker"):
             query = (
