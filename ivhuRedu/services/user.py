@@ -95,7 +95,7 @@ async def create_user(
 
 
     if data.password:
-        payload["hashed_password"] = hash_password(
+        payload["hashed_password"] = await hash_password(
             data.password
         )
         payload["must_change_password"] = True
@@ -139,7 +139,7 @@ async def update_user(
 
 
     if data.password:
-        update_data["hashed_password"] = hash_password(
+        update_data["hashed_password"] = await hash_password(
             data.password
         )
 

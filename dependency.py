@@ -35,7 +35,8 @@ async def get_current_user(
         },
     )
 
-    payload = decode_token(token)
+
+    payload = await decode_token(token)
 
     if payload is None:
         raise credentials_error
@@ -88,14 +89,7 @@ def require_password_changed(
     ),
 ) -> User:
 
-    if (
-        current_user.user_type
-        in (
-            UserType.SUPERVISOR,
-            UserType.EXTENSION_WORKER,
-        )
-        and current_user.must_change_password
-    ):
+    if current_user.must_change_password:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You must change your password before continuing.",

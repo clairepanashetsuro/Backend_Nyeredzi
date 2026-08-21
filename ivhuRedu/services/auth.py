@@ -38,7 +38,7 @@ async def authenticate_user(
     if not user.hashed_password:
         raise invalid_credentials
 
-    if not verify_password(
+    if not await verify_password(
         password,
         user.hashed_password,
     ):
@@ -93,12 +93,12 @@ async def login(
         "role": user.user_type.value,
     }
 
-    access_token = create_access_token(
+    access_token = await create_access_token(
         data=token_data,
         expires_delta=access_expiry,
     )
 
-    refresh_token = create_refresh_token(
+    refresh_token = await create_refresh_token(
         data=token_data,
         expires_delta=refresh_expiry,
     )
@@ -106,7 +106,7 @@ async def login(
     offline_token = None
 
     if user.user_type == UserType.EXTENSION_WORKER:
-        offline_token = create_offline_token(
+        offline_token = await create_offline_token(
             data=token_data,
         )
 
@@ -132,7 +132,7 @@ async def change_password(
             detail="This account does not have a password.",
         )
 
-    if not verify_password(
+    if not await verify_password(
         old_password,
         user.hashed_password,
     ):
@@ -141,7 +141,7 @@ async def change_password(
             detail="Incorrect current password.",
         )
 
-    if verify_password(
+    if await verify_password(
         new_password,
         user.hashed_password,
     ):
@@ -150,7 +150,7 @@ async def change_password(
             detail="New password cannot be the same as the old password.",
         )
 
-    user.hashed_password = hash_password(
+    user.hashed_password = await hash_password(
         new_password
     )
 

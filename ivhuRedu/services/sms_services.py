@@ -115,7 +115,11 @@ class SMSService:
             "sender_id": request.sender_id or self.sender_id,
             "ip": self._ip(http_request),
             "provider_response": resp,
-            "external_id": resp.get("message_id") or resp.get("id"),
+            "external_id": (
+                (resp.get("recipients") or [{}])[0].get("id")
+                or resp.get("message_id")
+                or resp.get("id")
+            ),
         })
         return {
             "success": True,
@@ -136,7 +140,11 @@ class SMSService:
             "sender_id": request.sender_id or self.sender_id,
             "ip": self._ip(http_request),
             "provider_response": resp,
-            "external_id": resp.get("message_id") or resp.get("id"),
+            "external_id": (
+                (resp.get("recipients") or [{}])[0].get("id")
+                or resp.get("message_id")
+                or resp.get("id")
+            ),
         })
         return {
             "success": True,
@@ -166,7 +174,11 @@ class SMSService:
             "sender_id": request.sender_id or self.sender_id,
             "ip": self._ip(http_request),
             "provider_response": resp,
-            "external_id": resp.get("message_id") or resp.get("id"),
+            "external_id": (
+                (resp.get("recipients") or [{}])[0].get("id")
+                or resp.get("message_id")
+                or resp.get("id")
+            ),
         })
 
         return {
@@ -262,24 +274,57 @@ class SMSService:
 
     async def handle_callback(self, payload: Any, request: Any) -> Dict[str, Any]:
         provided_secret = None
+
         if hasattr(request, "query_params"):
             provided_secret = request.query_params.get("secret")
         elif isinstance(request, str):
             provided_secret = request
 
         if not provided_secret:
-            raise HTTPException(status_code=401, detail="Missing webhook secret query parameter")
-        if not secrets.compare_digest(provided_secret, self.callback_secret):
-            raise HTTPException(status_code=401, detail="Invalid webhook secret")
+            raise HTTPException(
+                status_code=401,
+                detail="Missing webhook secret query parameter"
+            )
 
-        payload_dict = payload.model_dump() if hasattr(payload, "model_dump") else dict(payload)
+        if not secrets.compare_digest(provided_secret, self.callback_secret):
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid webhook secret"
+            )
+
+        payload_dict = (
+            payload.model_dump()
+            if hasattr(payload, "model_dump")
+            else dict(payload)
+        )
+
         message_id = payload_dict.get("message_id")
+        new_status = payload_dict.get("status", "unknown")
+
         if message_id:
             for log in self.logs.values():
+
+                # Match future logs through external_id.
                 if log.get("external_id") == message_id:
-                    log["status"] = payload_dict.get("status", "unknown")
+                    log["status"] = new_status
                     log["updated_at"] = datetime.now(timezone.utc)
                     break
+
+                # Match existing logs where external_id was not stored,
+                # but the provider ID exists inside provider_response.
+                provider_response = log.get("provider_response") or {}
+                recipients = provider_response.get("recipients") or []
+
+                for recipient in recipients:
+                    if recipient.get("id") == message_id:
+                        log["status"] = new_status
+                        log["external_id"] = message_id
+                        log["updated_at"] = datetime.now(timezone.utc)
+                        break
+                else:
+                    continue
+
+                break
 
         return {"status": "processed"}
 

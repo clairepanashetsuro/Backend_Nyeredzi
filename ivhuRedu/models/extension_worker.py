@@ -5,7 +5,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
-from ivhuRedu.database import Base
+from database import Base
 
 class WorkerAvailabilityStatus(str, enum.Enum):
     AVAILABLE = "available"
@@ -36,7 +36,7 @@ class ExtensionWorker(Base):
 
     # Relationships
     user = relationship("User", back_populates="extension_worker")
-    farmer_requests = relationship("FarmerRequest", back_populates="extension_worker")
+    farmer_requests = relationship("FarmerRequest", back_populates="assigned_worker")
     field_reports = relationship("FieldReport", back_populates="extension_worker")
     
     location = relationship(

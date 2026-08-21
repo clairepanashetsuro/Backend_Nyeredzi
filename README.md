@@ -1,4 +1,3 @@
-
 IvhuRedu 
 Integrated Digital Agriculture Extension Platform for Rural Zimbabwe
 

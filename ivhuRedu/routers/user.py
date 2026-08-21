@@ -1,6 +1,5 @@
 import uuid
 from typing import List
-
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -10,23 +9,16 @@ from dependency import (
     require_password_changed,
     require_roles,
 )
-
 from ivhuRedu.models.user import User, UserType
-
 from ivhuRedu.schemas.user import (
     UserCreate,
     UserRead,
     UserUpdate,
 )
-
 from ivhuRedu.services import user as user_service
 
-
-router = APIRouter(
-    prefix="/users",
-    tags=["Users"],
-)
-
+# FIX: Removed local prefix and tags to stop Swagger UI page duplication
+router = APIRouter()
 
 @router.post(
     "/",
@@ -35,6 +27,7 @@ router = APIRouter(
 )
 async def create_user(
     data: UserCreate,
+    user_type: UserType = UserType.SUPERVISOR,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(
         require_roles(UserType.ADMIN)
@@ -43,7 +36,7 @@ async def create_user(
     return await user_service.create_user(
         db=db,
         data=data,
-        user_type=UserType.SUPERVISOR,
+        user_type=user_type,
     )
 
 @router.get(
@@ -63,7 +56,6 @@ async def list_users(
 ):
     return await user_service.list_users(db)
 
-
 @router.get(
     "/{id}",
     response_model=UserRead,
@@ -79,12 +71,10 @@ async def get_user(
         id,
         current_user,
     )
-
     return await user_service.get_user(
         db,
         id,
     )
-
 
 @router.put(
     "/{id}",
@@ -102,13 +92,11 @@ async def update_user(
         id,
         current_user,
     )
-
     return await user_service.update_user(
         db,
         id,
         data,
     )
-
 
 @router.delete(
     "/{id}",
