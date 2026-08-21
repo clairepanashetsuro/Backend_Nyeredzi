@@ -22,20 +22,20 @@ from ivhuRedu.schemas.auth import (
     RefreshTokenRequest,
     ResetPasswordRequest,
     Token,
-    VerifyPasswordResetOTPRequest,
-    VerifyPasswordResetOTPResponse,
 )
 
 from ivhuRedu.services import auth as auth_service
 from ivhuRedu.services import password_reset_otp as password_reset_service
 
 from ivhuRedu.repositories.user import user_repository
+# UPDATED: Imported hash_password function directly here
 from ivhuRedu.services.security import (
     create_access_token,
     create_offline_token,
     create_password_reset_token,
     create_refresh_token,
     decode_token,
+    hash_password,
 )
 
 router = APIRouter()
@@ -198,6 +198,7 @@ async def forgot_password(
         )
     }
 
+
 @router.post(
     "/reset-password",
 )
@@ -205,42 +206,15 @@ async def reset_password(
     data: ResetPasswordRequest,
     db: AsyncSession = Depends(get_db),
 ):
-    payload = await decode_token(
-        data.reset_token
+    user_id = await password_reset_service.verify_password_reset_otp_code(
+        db=db,
+        phone_number=data.phone_number,
+        otp_code=data.otp_code,
     )
-
-    if payload is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired reset token.",
-        )
-
-    if payload.get("token_type") != "password_reset":
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid reset token.",
-        )
-
-    user_id = payload.get("sub")
-
-    if not user_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid reset token.",
-        )
-
-    try:
-        user_uuid = uuid.UUID(user_id)
-
-    except (ValueError, TypeError):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid reset token.",
-        )
 
     user = await user_repository.get(
         db,
-        user_uuid,
+        user_id,
     )
 
     if user is None:
@@ -255,8 +229,17 @@ async def reset_password(
             detail="Account locked.",
         )
 
-    return await auth_service.reset_password(
+    # Hash the new plaintext password string securely
+    hashed_password = await hash_password(data.new_password)
+
+    
+    await user_repository.update(
         db=db,
-        user=user,
-        new_password=data.new_password,
+        db_obj=user,
+        data={
+            "hashed_password": hashed_password,
+            "must_change_password": False,
+        },
     )
+
+    return {"message": "Password has been reset successfully."}

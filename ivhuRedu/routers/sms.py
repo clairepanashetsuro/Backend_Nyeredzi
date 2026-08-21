@@ -11,7 +11,7 @@ from ivhuRedu.schemas.sms import (
 )
 from ivhuRedu.services.sms_services import SMSService, get_sms_service
 
-router = APIRouter(prefix="/sms", tags=["SMS"])
+router = APIRouter(prefix="/sms")
 
 
 @router.post("/send")

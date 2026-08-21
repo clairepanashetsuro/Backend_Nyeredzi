@@ -33,7 +33,7 @@ class FarmerRequest(Base):
     phone_number = Column(String, nullable=False)
     request_type = Column(Enum(RequestType, name="request_type"), nullable=False)
     ussd_session_id = Column(String, nullable=True)
-    ussd_input_text = Column(Integer, nullable=True)
+    ussd_input_text = Column(String, nullable=True)
     distance_in_meters = Column(Float, nullable=True)
     sync_status = Column(String, default="PENDING_SYNC", nullable=True)
     status = Column(Enum(RequestStatus, name="requeststatus"), nullable=False, default=RequestStatus.PENDING, server_default=RequestStatus.PENDING.value)
