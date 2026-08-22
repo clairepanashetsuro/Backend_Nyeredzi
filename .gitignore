@@ -1,0 +1,92 @@
+
+.env
+.env.local
+.env.production
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+*.db
+*.sqlite
+*.sqlite3
+.vscode/
+.idea/
+.env
+.env.*
+!.env.example
+
+__pycache__/
+*.pyc
+
+ivhuRedu/logs/*.log
+
+
+
+# Cache files
+__pycache__/
+
+# Virtual environments
+env/
+.env/
+.venv/
+
+
+
+# Environment variables /
+.env
+.env.local
+.env.*.local
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# IDE / editor
+.vscode/
+
+# Database
+*.db
+*.sqlite3
+
+# Logs
+*.log
+logs/
+
+# FastAPI / uvicorn
+*.pid
+
+# Alembic
+alembic/
+alembic.ini
+.alembic
+.env
+keys/jwt_private.pem
+
+# JWT keys
+keys/keys/
+keys/
+# Alembic
+alembic/
+alembic.ini
+.alembic/
+
+# JWT / private keys
+keys/
+*.pem
+.env
+.env.*
+!.env.example
+
+# Alembic
+alembic/
+alembic.ini
+.alembic/
+
+# JWT / private keys
+keys/
+*.pem
