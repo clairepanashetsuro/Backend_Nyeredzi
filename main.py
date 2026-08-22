@@ -16,6 +16,8 @@ from ivhuRedu.models.farmer_request import FarmerRequest
 from ivhuRedu.models.field_report import FieldReport
 from ivhuRedu.models.field_image import FieldImage
 from ivhuRedu.models.location import Location
+from ivhuRedu.models.password_reset_otp import PasswordResetOTP
+from ivhuRedu.models.ussd import USSDSession 
 
 from ivhuRedu.services.security import hash_password
 
