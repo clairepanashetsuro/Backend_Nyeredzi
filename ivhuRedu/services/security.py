@@ -135,7 +135,7 @@ PASSWORD_RESET_TOKEN_EXPIRE_MINUTES = int(
     )
 )
 
-# Global variables for caching key strings in memory
+
 _PRIVATE_KEY: Optional[str] = None
 _PUBLIC_KEY: Optional[str] = None
 
@@ -157,13 +157,13 @@ def _get_private_key() -> str:
     if _PRIVATE_KEY is not None:
         return _PRIVATE_KEY
 
-    # Check Heroku Environment Variables first
+    
     env_key = os.getenv("JWT_PRIVATE_KEY")
     if env_key:
         _PRIVATE_KEY = _decode_key_content(env_key)
         return _PRIVATE_KEY
 
-    # Local file fallback
+
     key_path = os.getenv("JWT_PRIVATE_KEY_PATH", "keys/jwt_private.pem")
     try:
         with open(key_path, "r", encoding="utf-8") as f:
@@ -183,13 +183,13 @@ def _get_public_key() -> str:
     if _PUBLIC_KEY is not None:
         return _PUBLIC_KEY
 
-    # Check Heroku Environment Variables first
+
     env_key = os.getenv("JWT_PUBLIC_KEY")
     if env_key:
         _PUBLIC_KEY = _decode_key_content(env_key)
         return _PUBLIC_KEY
 
-    # Local file fallback
+
     key_path = os.getenv("JWT_PUBLIC_KEY_PATH", "keys/jwt_public.pem")
     try:
         with open(key_path, "r", encoding="utf-8") as f:
