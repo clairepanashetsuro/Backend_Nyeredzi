@@ -1,4 +1,5 @@
 import asyncio
+import base64
 import os
 import secrets
 
@@ -97,23 +98,9 @@ async def verify_password_reset_otp(
     )
 
 
-
-
 ALGORITHM = os.getenv(
     "JWT_ALGORITHM",
     "RS256",
-)
-
-
-PRIVATE_KEY_PATH = os.getenv(
-    "JWT_PRIVATE_KEY_PATH",
-    "keys/jwt_private.pem",
-)
-
-
-PUBLIC_KEY_PATH = os.getenv(
-    "JWT_PUBLIC_KEY_PATH",
-    "keys/jwt_public.pem",
 )
 
 
@@ -149,32 +136,71 @@ PASSWORD_RESET_TOKEN_EXPIRE_MINUTES = int(
 )
 
 
-try:
-
-    with open(
-        PRIVATE_KEY_PATH,
-        "r",
-        encoding="utf-8",
-    ) as private_key_file:
-        PRIVATE_KEY = private_key_file.read()
+_PRIVATE_KEY: Optional[str] = None
+_PUBLIC_KEY: Optional[str] = None
 
 
-    with open(
-        PUBLIC_KEY_PATH,
-        "r",
-        encoding="utf-8",
-    ) as public_key_file:
-        PUBLIC_KEY = public_key_file.read()
+def _decode_key_content(content: str) -> str:
+    """Decode key content if it's base64 encoded, otherwise return as is."""
+    stripped = content.strip()
+    if stripped.startswith("-----BEGIN"):
+        return stripped
+    try:
+        return base64.b64decode(stripped).decode("utf-8")
+    except Exception:
+        return content
 
 
-except FileNotFoundError as exc:
+def _get_private_key() -> str:
+    """Get private key dynamically from env or local file fallback."""
+    global _PRIVATE_KEY
+    if _PRIVATE_KEY is not None:
+        return _PRIVATE_KEY
 
-    raise RuntimeError(
-        "JWT RSA key files could not be found. "
-        "Check JWT_PRIVATE_KEY_PATH and JWT_PUBLIC_KEY_PATH."
-    ) from exc
+    
+    env_key = os.getenv("JWT_PRIVATE_KEY")
+    if env_key:
+        _PRIVATE_KEY = _decode_key_content(env_key)
+        return _PRIVATE_KEY
 
 
+    key_path = os.getenv("JWT_PRIVATE_KEY_PATH", "keys/jwt_private.pem")
+    try:
+        with open(key_path, "r", encoding="utf-8") as f:
+            _PRIVATE_KEY = f.read()
+    except FileNotFoundError as exc:
+        raise RuntimeError(
+            f"JWT private key not found at '{key_path}'. "
+            "Set JWT_PRIVATE_KEY env var or check local path."
+        ) from exc
+
+    return _PRIVATE_KEY
+
+
+def _get_public_key() -> str:
+    """Get public key dynamically from env or local file fallback."""
+    global _PUBLIC_KEY
+    if _PUBLIC_KEY is not None:
+        return _PUBLIC_KEY
+
+
+    env_key = os.getenv("JWT_PUBLIC_KEY")
+    if env_key:
+        _PUBLIC_KEY = _decode_key_content(env_key)
+        return _PUBLIC_KEY
+
+
+    key_path = os.getenv("JWT_PUBLIC_KEY_PATH", "keys/jwt_public.pem")
+    try:
+        with open(key_path, "r", encoding="utf-8") as f:
+            _PUBLIC_KEY = f.read()
+    except FileNotFoundError as exc:
+        raise RuntimeError(
+            f"JWT public key not found at '{key_path}'. "
+            "Set JWT_PUBLIC_KEY env var or check local path."
+        ) from exc
+
+    return _PUBLIC_KEY
 
 
 async def create_access_token(
@@ -204,11 +230,9 @@ async def create_access_token(
     return await asyncio.to_thread(
         jwt.encode,
         to_encode,
-        PRIVATE_KEY,
+        _get_private_key(),
         algorithm=ALGORITHM,
     )
-
-
 
 
 async def create_refresh_token(
@@ -238,11 +262,9 @@ async def create_refresh_token(
     return await asyncio.to_thread(
         jwt.encode,
         to_encode,
-        PRIVATE_KEY,
+        _get_private_key(),
         algorithm=ALGORITHM,
     )
-
-
 
 
 async def create_offline_token(
@@ -272,11 +294,9 @@ async def create_offline_token(
     return await asyncio.to_thread(
         jwt.encode,
         to_encode,
-        PRIVATE_KEY,
+        _get_private_key(),
         algorithm=ALGORITHM,
     )
-
-
 
 
 async def create_password_reset_token(
@@ -309,11 +329,9 @@ async def create_password_reset_token(
     return await asyncio.to_thread(
         jwt.encode,
         payload,
-        PRIVATE_KEY,
+        _get_private_key(),
         algorithm=ALGORITHM,
     )
-
-
 
 
 async def decode_token(
@@ -325,8 +343,8 @@ async def decode_token(
         return await asyncio.to_thread(
             jwt.decode,
             token,
-            PUBLIC_KEY,
-            algorithms=["RS256"],
+            _get_public_key(),
+            algorithms=[ALGORITHM],
         )
 
     except InvalidTokenError:
