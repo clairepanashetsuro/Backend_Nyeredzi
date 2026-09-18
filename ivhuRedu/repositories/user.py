@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import uuid
-
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -118,9 +117,17 @@ class UserRepository:
         db.add(user)
 
         await db.commit()
-        await db.refresh(user)
 
-        return user
+        result = await db.execute(
+            select(User)
+            .options(
+                selectinload(User.extension_worker),
+                selectinload(User.farmer),
+            )
+            .where(User.id == user.id)
+        )
+
+        return result.scalar_one()
 
     async def update(
         self,
@@ -136,9 +143,16 @@ class UserRepository:
             )
 
         await db.commit()
-        await db.refresh(db_obj)
 
-        return db_obj
+        result = await db.execute(
+            select(User)
+            .options(
+                selectinload(User.extension_worker),
+                selectinload(User.farmer),
+            )
+            .where(User.id == db_obj.id)
+        )
 
+        return result.scalar_one()
 
 user_repository = UserRepository()
