@@ -26,6 +26,22 @@ def upgrade() -> None:
 
     status_enum.create(op.get_bind(), checkfirst=True)
 
+    issue_type_enum = sa.Enum(
+        "LAND_DEGRADATION",
+        "PEST_OUTBREAK",
+        "CROP_FAILURE",
+        name="issue_type_enum",
+    )
+
+    sync_status_enum = sa.Enum(
+        "PENDING_SYNC",
+        "SYNCED",
+        name="sync_status_enum",
+    )
+
+    issue_type_enum.create(op.get_bind(), checkfirst=True)
+    sync_status_enum.create(op.get_bind(), checkfirst=True)
+
     op.add_column(
         "field_reports",
         sa.Column(
