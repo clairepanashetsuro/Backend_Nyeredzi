@@ -1,7 +1,7 @@
-
 import uuid
 
 from fastapi import APIRouter, Depends, status
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from dependency import (
@@ -17,6 +17,10 @@ from ivhuRedu.schemas.extension_worker import (
     ExtensionWorkerStatusUpdate,
     ExtensionWorkerUpdate,
 )
+
+from ivhuRedu.schemas.user import ExtensionWorkerWithUserRead
+
+from ivhuRedu.repositories.user import user_repository
 
 from ivhuRedu.services import (
     extension_worker as extension_worker_service,
@@ -47,6 +51,24 @@ async def create_extension_worker(
     )
 
 
+@router.get(
+    "/",
+    response_model=list[ExtensionWorkerWithUserRead],
+)
+async def get_extension_workers(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(
+        require_roles(
+            UserType.SUPERVISOR,
+            UserType.ADMIN,
+        )
+    ),
+):
+    return await user_repository.get_all_extension_workers(
+        db
+    )
+
+
 @router.patch(
     "/{worker_id}/status",
     response_model=ExtensionWorkerRead,
@@ -68,7 +90,7 @@ async def update_extension_worker_status(
 
 @router.get(
     "/{worker_id}",
-    response_model=ExtensionWorkerRead,
+    response_model=ExtensionWorkerWithUserRead,
 )
 async def get_extension_worker(
     worker_id: uuid.UUID,
@@ -88,7 +110,7 @@ async def get_extension_worker(
 
 @router.put(
     "/{worker_id}",
-    response_model=ExtensionWorkerRead,
+    response_model=ExtensionWorkerWithUserRead,
 )
 async def update_extension_worker(
     worker_id: uuid.UUID,
@@ -107,6 +129,7 @@ async def update_extension_worker(
         data=data.model_dump(
             exclude_unset=True
         ),
+        current_user=current_user,
     )
 
 

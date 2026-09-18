@@ -3,7 +3,6 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-
 from ivhuRedu.models.extension_worker import ExtensionWorker
 
 
@@ -47,6 +46,15 @@ class ExtensionWorkerRepository:
 
         return result.scalar_one_or_none()
 
+    async def get_all(
+        self,
+    ) -> list[ExtensionWorker]:
+        result = await self.db.execute(
+            select(ExtensionWorker)
+        )
+
+        return result.scalars().all()
+
     async def exists_by_user_id(
         self,
         user_id: UUID,
@@ -62,8 +70,7 @@ class ExtensionWorkerRepository:
     async def update_extension_worker(
         self,
         extension_worker_id: UUID,
-        
-        ward_name: str | None = None, 
+        ward_name: str | None = None,
         location_id: UUID | None = None,
     ) -> ExtensionWorker | None:
 
@@ -74,7 +81,6 @@ class ExtensionWorkerRepository:
         if not extension_worker:
             return None
 
-    
         if ward_name is not None:
             extension_worker.ward_name = ward_name
 
@@ -85,7 +91,5 @@ class ExtensionWorkerRepository:
         await self.db.refresh(extension_worker)
 
         return extension_worker
-        
-extension_worker_repository = ExtensionWorkerRepository()
 
-
+worker_repository = ExtensionWorkerRepository

@@ -36,8 +36,7 @@ class FieldReport(Base):
 
     issue_type = Column(SqlEnum(IssueType, name="issue_type_enum"), nullable=True)
     report_details = Column(Text, nullable=True)
-    details = Column(Text, nullable=True)
-    description_type = Column(Text, nullable=False)
+    description_type = Column(Text, nullable=True)
     
     ussd_description = Column(Text, nullable=True)
     ussd_info = Column(Text, nullable=True)

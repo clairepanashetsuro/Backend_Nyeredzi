@@ -12,12 +12,12 @@ from dependency import (
 from ivhuRedu.models.user import User, UserType
 from ivhuRedu.schemas.user import (
     UserCreate,
+    UserDetailsRead,
     UserRead,
     UserUpdate,
 )
 from ivhuRedu.services import user as user_service
 
-# FIX: Removed local prefix and tags to stop Swagger UI page duplication
 router = APIRouter()
 
 @router.post(
@@ -41,7 +41,7 @@ async def create_user(
 
 @router.get(
     "/",
-    response_model=List[UserRead],
+    response_model=List[UserDetailsRead],
     dependencies=[
         Depends(
             require_roles(
@@ -58,7 +58,7 @@ async def list_users(
 
 @router.get(
     "/{id}",
-    response_model=UserRead,
+    response_model=UserDetailsRead,
 )
 async def get_user(
     id: uuid.UUID,
@@ -78,7 +78,7 @@ async def get_user(
 
 @router.put(
     "/{id}",
-    response_model=UserRead,
+    response_model=UserDetailsRead,
 )
 async def update_user(
     id: uuid.UUID,

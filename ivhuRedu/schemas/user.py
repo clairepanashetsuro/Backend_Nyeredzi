@@ -1,5 +1,6 @@
 import re
 import uuid
+
 from datetime import datetime
 from typing import Optional
 
@@ -18,17 +19,11 @@ PHONE_REGEX = re.compile(
 )
 
 
-
-
 class UserBase(BaseModel):
-
     first_name: str
     last_name: str
     phone_number: str
-
     email: Optional[EmailStr] = None
-
-    
 
     @field_validator("phone_number")
     @classmethod
@@ -36,16 +31,12 @@ class UserBase(BaseModel):
         cls,
         value: str,
     ) -> str:
-
         if not PHONE_REGEX.match(value):
             raise ValueError(
                 "phone_number must contain only digits "
                 "(7-15 of them), with an optional leading +"
             )
-
         return value
-
-    
 
     @field_validator("first_name", "last_name")
     @classmethod
@@ -53,21 +44,13 @@ class UserBase(BaseModel):
         cls,
         value: str,
     ) -> str:
-
         if not value.strip():
-            raise ValueError(
-                "must not be blank"
-            )
-
+            raise ValueError("must not be blank")
         return value
 
 
-
-
 class UserCreate(UserBase):
-
     password: Optional[str] = None
-
 
     @field_validator("password")
     @classmethod
@@ -75,25 +58,19 @@ class UserCreate(UserBase):
         cls,
         value: Optional[str],
     ) -> Optional[str]:
-
         if value is not None and len(value) < 8:
             raise ValueError(
                 "password must be at least 8 characters long"
             )
-
         return value
 
 
-
 class UserUpdate(BaseModel):
-
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     email: Optional[EmailStr] = None
     phone_number: Optional[str] = None
     password: Optional[str] = None
-
-    
 
     @field_validator("phone_number")
     @classmethod
@@ -101,7 +78,6 @@ class UserUpdate(BaseModel):
         cls,
         value: Optional[str],
     ) -> Optional[str]:
-
         if (
             value is not None
             and not PHONE_REGEX.match(value)
@@ -110,9 +86,7 @@ class UserUpdate(BaseModel):
                 "phone_number must contain only digits "
                 "(7-15 of them), with an optional leading +"
             )
-
         return value
-
 
     @field_validator("password")
     @classmethod
@@ -120,22 +94,39 @@ class UserUpdate(BaseModel):
         cls,
         value: Optional[str],
     ) -> Optional[str]:
-
         if value is not None and len(value) < 8:
             raise ValueError(
                 "password must be at least 8 characters long"
             )
-
         return value
 
 
+class ExtensionWorkerRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    worker_id: uuid.UUID
+    user_id: uuid.UUID
+    assigned_ward_name: str
+    availability_status: str
+    location_id: uuid.UUID
+    created_at: datetime
+    last_updated_at: datetime
+
+
+class FarmerRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    farmer_id: uuid.UUID
+    user_id: uuid.UUID
+    ward_name: str
+    primary_crop: Optional[str] = None
+    location_id: uuid.UUID
+    created_at: datetime
+    updated_at: datetime
 
 
 class UserRead(BaseModel):
-
-    model_config = ConfigDict(
-        from_attributes=True
-    )
+    model_config = ConfigDict(from_attributes=True)
 
     id: uuid.UUID
     first_name: str
@@ -145,3 +136,47 @@ class UserRead(BaseModel):
     user_type: UserType
     created_at: datetime
     updated_at: datetime
+    extension_worker: Optional[ExtensionWorkerRead] = None
+    farmer: Optional[FarmerRead] = None
+
+
+class UserDetailsRead(BaseModel):
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    first_name: str
+    last_name: str
+    email: Optional[str] = None
+    phone_number: str
+    user_type: UserType
+    created_at: datetime
+    updated_at: datetime
+
+
+class ExtensionWorkerWithUserRead(BaseModel):
+
+    model_config = ConfigDict(from_attributes=True)
+
+    worker_id: uuid.UUID
+    user_id: uuid.UUID
+    assigned_ward_name: str
+    availability_status: str
+    location_id: uuid.UUID
+    created_at: datetime
+    last_updated_at: datetime
+    user: UserDetailsRead
+
+
+class FarmerWithUserRead(BaseModel):
+
+    model_config = ConfigDict(from_attributes=True)
+
+    farmer_id: uuid.UUID
+    user_id: uuid.UUID
+    ward_name: str
+    primary_crop: Optional[str] = None
+    location_id: uuid.UUID
+    created_at: datetime
+    updated_at: datetime
+    user: UserDetailsRead

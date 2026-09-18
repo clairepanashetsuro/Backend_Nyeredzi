@@ -1,4 +1,3 @@
-
 from uuid import UUID
 
 from sqlalchemy import select
@@ -47,6 +46,15 @@ class FarmerRepository:
 
         return result.scalar_one_or_none()
 
+    async def get_all(
+        self,
+    ) -> list[Farmer]:
+        result = await self.db.execute(
+            select(Farmer)
+        )
+
+        return result.scalars().all()
+
     async def exists_by_user_id(
         self,
         user_id: UUID,
@@ -84,4 +92,4 @@ class FarmerRepository:
 
         return farmer
 
-farmer_repository = FarmerRepository()
+farmer_repository = FarmerRepository

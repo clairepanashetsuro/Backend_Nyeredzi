@@ -1,7 +1,9 @@
+
 from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from ivhuRedu.models.field_report import FieldReport
 from ivhuRedu.schemas.field_report import (
@@ -20,19 +22,34 @@ class FieldReportRepository:
         self.db.add(report)
 
         await self.db.commit()
-        await self.db.refresh(report)
 
-        return report
+        result = await self.db.execute(
+            select(FieldReport)
+            .options(
+                selectinload(FieldReport.images)
+            )
+            .where(
+                FieldReport.report_id == report.report_id
+            )
+        )
+
+        return result.scalar_one()
 
     async def get_all(self):
         result = await self.db.execute(
-            select(FieldReport)
+            select(FieldReport).options(
+                selectinload(FieldReport.images)
+            )
         )
         return result.scalars().all()
 
     async def get_by_id(self, report_id: UUID):
         result = await self.db.execute(
-            select(FieldReport).where(
+            select(FieldReport)
+            .options(
+                selectinload(FieldReport.images)
+            )
+            .where(
                 FieldReport.report_id == report_id
             )
         )
@@ -40,7 +57,11 @@ class FieldReportRepository:
 
     async def get_by_worker(self, worker_id: UUID):
         result = await self.db.execute(
-            select(FieldReport).where(
+            select(FieldReport)
+            .options(
+                selectinload(FieldReport.images)
+            )
+            .where(
                 FieldReport.worker_id == worker_id
             )
         )
@@ -64,9 +85,18 @@ class FieldReportRepository:
             setattr(report, key, value)
 
         await self.db.commit()
-        await self.db.refresh(report)
 
-        return report
+        result = await self.db.execute(
+            select(FieldReport)
+            .options(
+                selectinload(FieldReport.images)
+            )
+            .where(
+                FieldReport.report_id == report_id
+            )
+        )
+
+        return result.scalar_one()
 
     async def delete(self, report_id: UUID) -> bool:
         report = await self.get_by_id(report_id)
@@ -81,3 +111,4 @@ class FieldReportRepository:
 
 
 field_report_repository = FieldReportRepository
+

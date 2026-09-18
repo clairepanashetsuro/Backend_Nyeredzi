@@ -1,4 +1,3 @@
-
 import logging
 import uuid
 
@@ -28,13 +27,10 @@ from ivhuRedu.services.security import (
 logger = logging.getLogger(__name__)
 
 
-
-
 async def create_extension_worker(
     db: AsyncSession,
     data: ExtensionWorkerCreate,
 ):
-
     existing_user = await user_repository.get_by_phone_number(
         db,
         data.phone_number,
@@ -45,7 +41,6 @@ async def create_extension_worker(
             status_code=status.HTTP_409_CONFLICT,
             detail="A user with this phone number already exists.",
         )
-
 
     if data.email:
         existing_email = await user_repository.get_by_email(
@@ -59,22 +54,15 @@ async def create_extension_worker(
                 detail="A user with this email already exists.",
             )
 
-
     user = User(
         first_name=data.first_name,
         last_name=data.last_name,
         phone_number=data.phone_number,
         email=data.email,
-
-
         hashed_password=await hash_password(
             data.password
         ),
-
         user_type=UserType.EXTENSION_WORKER,
-
-
-
         must_change_password=True,
     )
 
@@ -82,22 +70,14 @@ async def create_extension_worker(
 
     await db.flush()
 
-
     worker = ExtensionWorker(
         user_id=user.id,
-
-        # USSD PIN must also be hashed
         hashed_ussd_pincode=await hash_password(
             data.ussd_pincode
         ),
-
         assigned_ward_name=data.assigned_ward_name,
-
         location_id=data.location_id,
-
-        availability_status=(
-            WorkerAvailabilityStatus.AVAILABLE
-        ),
+        availability_status=WorkerAvailabilityStatus.AVAILABLE,
     )
 
     db.add(worker)
@@ -105,9 +85,10 @@ async def create_extension_worker(
     try:
         await db.commit()
 
-        await db.refresh(worker)
-
-        return worker
+        return await get_extension_worker(
+            db,
+            worker.worker_id,
+        )
 
     except IntegrityError:
         await db.rollback()
@@ -120,8 +101,6 @@ async def create_extension_worker(
             status_code=status.HTTP_409_CONFLICT,
             detail="Extension worker could not be created.",
         )
-
-
 
 
 async def update_worker_status(
@@ -165,8 +144,6 @@ async def update_worker_status(
         )
 
 
-
-
 async def get_extension_worker(
     db: AsyncSession,
     worker_id: uuid.UUID,
@@ -194,12 +171,11 @@ async def get_extension_worker(
     return worker
 
 
-
-
 async def update_extension_worker(
     db: AsyncSession,
     worker_id: uuid.UUID,
     data: dict,
+    current_user: User,
 ):
     worker = await get_extension_worker(
         db,
@@ -214,47 +190,59 @@ async def update_extension_worker(
             detail="Extension worker user not found.",
         )
 
-    # Fields belonging to the User table
-    user_fields = {
+    is_privileged = current_user.user_type in {
+        UserType.SUPERVISOR,
+        UserType.ADMIN,
+    }
+
+    is_self = (
+        current_user.user_type == UserType.EXTENSION_WORKER
+        and worker.user_id == current_user.id
+    )
+
+    if not is_privileged and not is_self:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only update your own extension worker details.",
+        )
+
+    personal_fields = {
         "first_name",
         "last_name",
         "phone_number",
         "email",
     }
 
-    # Fields belonging to ExtensionWorker table
-    worker_fields = {
+    restricted_worker_fields = {
         "assigned_ward_name",
         "location_id",
-        "availability_status",
     }
 
     for field, value in data.items():
-
-
-
-        if field in user_fields:
-
+        if field in personal_fields:
             setattr(
                 user,
                 field,
                 value,
             )
 
-
-
         elif field == "password":
-
             user.hashed_password = await hash_password(
                 value
             )
+            user.must_change_password = False
 
+        elif field == "ussd_pincode":
+            worker.hashed_ussd_pincode = await hash_password(
+                value
+            )
 
-            user.must_change_password = True
-
-
-
-        elif field in worker_fields:
+        elif field in restricted_worker_fields:
+            if not is_privileged:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=f"You do not have permission to update {field}.",
+                )
 
             setattr(
                 worker,
@@ -262,20 +250,19 @@ async def update_extension_worker(
                 value,
             )
 
-
-
-        elif field == "ussd_pincode":
-
-            worker.hashed_ussd_pincode = await hash_password(
-                value
+        elif field == "availability_status":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Availability status must be updated through the status endpoint.",
             )
 
     try:
         await db.commit()
 
-        await db.refresh(worker)
-
-        return worker
+        return await get_extension_worker(
+            db,
+            worker_id,
+        )
 
     except IntegrityError:
         await db.rollback()
@@ -288,8 +275,6 @@ async def update_extension_worker(
             status_code=status.HTTP_409_CONFLICT,
             detail="Could not update extension worker.",
         )
-
-
 
 
 async def delete_extension_worker(
@@ -319,19 +304,15 @@ async def delete_extension_worker(
     user = worker.user
 
     try:
-        # Delete worker first because it references the user.
         await db.delete(worker)
 
-        # Then delete the associated user.
         if user:
             await db.delete(user)
 
         await db.commit()
 
         return {
-            "message": (
-                "Extension worker deleted successfully."
-            )
+            "message": "Extension worker deleted successfully."
         }
 
     except IntegrityError:

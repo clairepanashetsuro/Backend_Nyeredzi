@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database import get_db
@@ -30,18 +30,16 @@ async def create_field_report(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    if (
-        current_user.user_type.value
-        != "extension_worker"
-    ):
-        from fastapi import HTTPException
-
+    if current_user.user_type.value != "extension_worker":
         raise HTTPException(
             status_code=403,
             detail="Only extension workers can create field reports.",
         )
 
-    return await FieldReportService(db).create(report)
+    return await FieldReportService(db).create(
+        report,
+        current_user,
+    )
 
 
 @router.get(

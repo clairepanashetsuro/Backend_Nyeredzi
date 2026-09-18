@@ -1,8 +1,18 @@
+
 from pydantic import BaseModel, ConfigDict
 from uuid import UUID
 from typing import Optional
 from datetime import datetime
 from ivhuRedu.models.field_report import StatusEnum, IssueType, SyncStatus
+
+
+class ReportImageResponse(BaseModel):
+    image_id: UUID
+    report_id: UUID
+    image_url: str
+
+    model_config = ConfigDict(from_attributes=True)
+
 
 class FieldReportCreate(BaseModel):
     worker_id: UUID
@@ -10,7 +20,6 @@ class FieldReportCreate(BaseModel):
     related_request_id: Optional[UUID] = None
     issue_type: Optional[IssueType] = None
     report_details: Optional[str] = None
-    details: Optional[str] = None
     description_type: str
     ussd_description: Optional[str] = None
     ussd_info: Optional[str] = None
@@ -27,7 +36,6 @@ class FieldReportUpdate(BaseModel):
     related_request_id: Optional[UUID] = None
     issue_type: Optional[IssueType] = None
     report_details: Optional[str] = None
-    details: Optional[str] = None
     description_type: Optional[str] = None
     ussd_description: Optional[str] = None
     ussd_info: Optional[str] = None
@@ -45,7 +53,6 @@ class FieldReportResponse(BaseModel):
     related_request_id: Optional[UUID]
     issue_type: Optional[IssueType]
     report_details: Optional[str]
-    details: Optional[str]
     description_type: str
     ussd_description: Optional[str]
     ussd_info: Optional[str]
@@ -53,5 +60,6 @@ class FieldReportResponse(BaseModel):
     status: StatusEnum
     timestamp_captured: datetime
     timestamp_synced: Optional[datetime]
+    images: list[ReportImageResponse] = []
 
     model_config = ConfigDict(from_attributes=True)

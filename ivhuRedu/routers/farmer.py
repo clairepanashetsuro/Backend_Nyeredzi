@@ -1,6 +1,7 @@
 import uuid
 
 from fastapi import APIRouter, Depends, status
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from dependency import get_db, require_roles
@@ -12,6 +13,10 @@ from ivhuRedu.schemas.farmer import (
     FarmerRead,
     FarmerUpdate,
 )
+
+from ivhuRedu.schemas.user import FarmerWithUserRead
+
+from ivhuRedu.repositories.user import user_repository
 
 from ivhuRedu.services import farmer as farmer_service
 
@@ -39,6 +44,26 @@ async def create_farmer(
     return await farmer_service.create_farmer(
         db=db,
         data=data,
+    )
+
+
+@router.get(
+    "/",
+    response_model=list[FarmerWithUserRead],
+)
+async def get_farmers(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(
+        require_roles(
+            UserType.SUPERVISOR,
+            UserType.ADMIN,
+            UserType.EXTENSION_WORKER,
+
+        )
+    ),
+):
+    return await user_repository.get_all_farmers(
+        db
     )
 
 
@@ -98,6 +123,8 @@ async def delete_farmer(
     current_user: User = Depends(
         require_roles(
             UserType.ADMIN,
+            UserType.EXTENSION_WORKER,
+
         )
     ),
 ):

@@ -2,7 +2,11 @@ import uuid
 from typing import Iterable
 
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import (
+    OAuth2PasswordBearer,
+    HTTPBearer,
+    HTTPAuthorizationCredentials,
+)
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database import async_session
@@ -15,6 +19,8 @@ from ivhuRedu.services.security import decode_token
 oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl="auth/login"
 )
+
+password_reset_scheme = HTTPBearer()
 
 
 async def get_db():
@@ -34,7 +40,6 @@ async def get_current_user(
             "WWW-Authenticate": "Bearer"
         },
     )
-
 
     payload = await decode_token(token)
 
@@ -56,7 +61,6 @@ async def get_current_user(
 
     try:
         user_uuid = uuid.UUID(user_id)
-
     except (ValueError, TypeError):
         raise credentials_error
 
@@ -79,6 +83,58 @@ async def get_current_user(
         and user.user_type != UserType.EXTENSION_WORKER
     ):
         raise credentials_error
+
+    return user
+
+
+async def get_current_password_reset_user(
+    credentials: HTTPAuthorizationCredentials = Depends(
+        password_reset_scheme
+    ),
+    db: AsyncSession = Depends(get_db),
+) -> User:
+
+    credentials_error = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate reset credentials",
+        headers={
+            "WWW-Authenticate": "Bearer"
+        },
+    )
+
+    token = credentials.credentials
+
+    payload = await decode_token(token)
+
+    if payload is None:
+        raise credentials_error
+
+    if payload.get("token_type") != "password_reset":
+        raise credentials_error
+
+    user_id = payload.get("sub")
+
+    if not user_id:
+        raise credentials_error
+
+    try:
+        user_uuid = uuid.UUID(user_id)
+    except (ValueError, TypeError):
+        raise credentials_error
+
+    user = await user_repository.get(
+        db,
+        user_uuid,
+    )
+
+    if user is None:
+        raise credentials_error
+
+    if user.is_locked:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account locked.",
+        )
 
     return user
 

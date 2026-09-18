@@ -17,7 +17,11 @@ class FieldReportService:
     def __init__(self, db: AsyncSession):
         self.repo = FieldReportRepository(db)
 
-    async def create(self, data: FieldReportCreate):
+    async def create(
+        self,
+        data: FieldReportCreate,
+        current_user,
+    ):
 
         if (
             not data.description_type
@@ -27,6 +31,15 @@ class FieldReportService:
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail="description_type is required.",
             )
+
+        if current_user.user_type.value == "extension_worker":
+            if current_user.extension_worker is None:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Extension Worker profile not found.",
+                )
+
+            data.worker_id = current_user.extension_worker.worker_id
 
         data.status = StatusEnum.PENDING
         data.timestamp_synced = None
@@ -44,7 +57,15 @@ class FieldReportService:
                 detail="Not authorized to access field reports.",
             )
 
-        return await self.repo.get_by_worker(current_user.id)
+        if current_user.extension_worker is None:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Extension Worker profile not found.",
+            )
+
+        return await self.repo.get_by_worker(
+            current_user.extension_worker.worker_id
+        )
 
     async def get_by_id(
         self,
@@ -59,9 +80,24 @@ class FieldReportService:
                 detail="Field report not found",
             )
 
+        if current_user.user_type.value == "admin":
+            return report
+
+        if current_user.user_type.value != "extension_worker":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Not authorized to access this report",
+            )
+
+        if current_user.extension_worker is None:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Extension Worker profile not found.",
+            )
+
         if (
-            current_user.user_type.value != "admin"
-            and report.worker_id != current_user.id
+            report.worker_id
+            != current_user.extension_worker.worker_id
         ):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -75,9 +111,24 @@ class FieldReportService:
         worker_id: UUID,
         current_user,
     ):
+        if current_user.user_type.value == "admin":
+            return await self.repo.get_by_worker(worker_id)
+
+        if current_user.user_type.value != "extension_worker":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Not authorized to access these reports",
+            )
+
+        if current_user.extension_worker is None:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Extension Worker profile not found.",
+            )
+
         if (
-            current_user.user_type.value != "admin"
-            and worker_id != current_user.id
+            worker_id
+            != current_user.extension_worker.worker_id
         ):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -92,7 +143,7 @@ class FieldReportService:
         data: FieldReportUpdate,
         current_user,
     ):
-        await self.get_by_id(
+        report = await self.get_by_id(
             report_id,
             current_user,
         )
@@ -105,6 +156,12 @@ class FieldReportService:
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail="Description type cannot be empty",
             )
+
+        if (
+            current_user.user_type.value == "extension_worker"
+            and current_user.extension_worker is not None
+        ):
+            data.worker_id = current_user.extension_worker.worker_id
 
         if data.sync_status == SyncStatus.SYNCED:
             data.timestamp_synced = datetime.now(timezone.utc)

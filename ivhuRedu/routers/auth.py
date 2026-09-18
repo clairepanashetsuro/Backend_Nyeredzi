@@ -5,16 +5,14 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from dependency import (
+    get_current_password_reset_user,
     get_current_user,
     get_db,
 )
-from ivhuRedu.schemas.sms import SMSSendRequest
-from ivhuRedu.services.sms_services import (
-    SMSService,
-    get_sms_service,
-)
 
 from ivhuRedu.models.user import User, UserType
+
+from ivhuRedu.repositories.user import user_repository
 
 from ivhuRedu.schemas.auth import (
     ChangePasswordRequest,
@@ -22,13 +20,14 @@ from ivhuRedu.schemas.auth import (
     RefreshTokenRequest,
     ResetPasswordRequest,
     Token,
+    VerifyResetOTPRequest,
 )
+
+from ivhuRedu.schemas.sms import SMSSendRequest
 
 from ivhuRedu.services import auth as auth_service
 from ivhuRedu.services import password_reset_otp as password_reset_service
 
-from ivhuRedu.repositories.user import user_repository
-# UPDATED: Imported hash_password function directly here
 from ivhuRedu.services.security import (
     create_access_token,
     create_offline_token,
@@ -36,6 +35,11 @@ from ivhuRedu.services.security import (
     create_refresh_token,
     decode_token,
     hash_password,
+)
+
+from ivhuRedu.services.sms_services import (
+    SMSService,
+    get_sms_service,
 )
 
 router = APIRouter()
@@ -107,7 +111,6 @@ async def refresh_token(
 
     try:
         user_uuid = uuid.UUID(user_id)
-
     except (ValueError, TypeError):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -177,7 +180,6 @@ async def forgot_password(
     )
 
     if otp and phone_number:
-
         sms_request = SMSSendRequest(
             alert_type="password_reset",
             message=(
@@ -200,17 +202,25 @@ async def forgot_password(
 
 
 @router.post(
-    "/reset-password",
+    "/verify-reset-otp",
 )
-async def reset_password(
-    data: ResetPasswordRequest,
+async def verify_reset_otp(
+    data: VerifyResetOTPRequest,
     db: AsyncSession = Depends(get_db),
 ):
-    user_id = await password_reset_service.verify_password_reset_otp_code(
-        db=db,
-        phone_number=data.phone_number,
-        otp_code=data.otp_code,
+    user_id = (
+        await password_reset_service.verify_password_reset_otp_code(
+            db=db,
+            phone_number=data.phone_number,
+            otp_code=data.otp_code,
+        )
     )
+
+    if user_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired verification code.",
+        )
 
     user = await user_repository.get(
         db,
@@ -219,8 +229,8 @@ async def reset_password(
 
     if user is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found.",
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid verification request.",
         )
 
     if user.is_locked:
@@ -229,17 +239,40 @@ async def reset_password(
             detail="Account locked.",
         )
 
-    # Hash the new plaintext password string securely
-    hashed_password = await hash_password(data.new_password)
+    reset_token = await create_password_reset_token(
+        user_id=str(user.id),
+    )
 
-    
+    return {
+        "reset_token": reset_token,
+        "token_type": "password_reset",
+        "message": "Verification successful.",
+    }
+
+
+@router.post(
+    "/reset-password",
+)
+async def reset_password(
+    data: ResetPasswordRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(
+        get_current_password_reset_user
+    ),
+):
+    hashed_password = await hash_password(
+        data.new_password
+    )
+
     await user_repository.update(
         db=db,
-        db_obj=user,
+        db_obj=current_user,
         data={
             "hashed_password": hashed_password,
             "must_change_password": False,
         },
     )
 
-    return {"message": "Password has been reset successfully."}
+    return {
+        "message": "Password has been reset successfully."
+    }

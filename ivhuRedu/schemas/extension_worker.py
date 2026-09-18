@@ -15,11 +15,7 @@ from ivhuRedu.models.extension_worker import (
 )
 
 
-
-
 class ExtensionWorkerCreate(BaseModel):
-   
-
     first_name: str = Field(
         ...,
         min_length=2,
@@ -44,8 +40,6 @@ class ExtensionWorkerCreate(BaseModel):
         min_length=8,
     )
 
-   
-
     ussd_pincode: str = Field(
         ...,
         min_length=4,
@@ -58,11 +52,7 @@ class ExtensionWorkerCreate(BaseModel):
         max_length=100,
     )
 
-   
-
     location_id: uuid.UUID
-
-   
 
     @field_validator("ussd_pincode")
     @classmethod
@@ -70,7 +60,6 @@ class ExtensionWorkerCreate(BaseModel):
         cls,
         value: str,
     ) -> str:
-
         if not value.isdigit():
             raise ValueError(
                 "USSD PIN must contain only numbers"
@@ -79,33 +68,44 @@ class ExtensionWorkerCreate(BaseModel):
         return value
 
 
-
-
 class ExtensionWorkerUpdate(BaseModel):
+    first_name: Optional[str] = Field(
+        default=None,
+        min_length=2,
+        max_length=100,
+    )
 
- 
+    last_name: Optional[str] = Field(
+        default=None,
+        min_length=2,
+        max_length=100,
+    )
 
-    first_name: Optional[str] = None
-
-    last_name: Optional[str] = None
-
-    phone_number: Optional[str] = None
+    phone_number: Optional[str] = Field(
+        default=None,
+        max_length=20,
+    )
 
     email: Optional[EmailStr] = None
 
-    password: Optional[str] = None
+    password: Optional[str] = Field(
+        default=None,
+        min_length=8,
+    )
 
-    
-
-    assigned_ward_name: Optional[str] = None
+    assigned_ward_name: Optional[str] = Field(
+        default=None,
+        min_length=2,
+        max_length=100,
+    )
 
     location_id: Optional[uuid.UUID] = None
 
-    availability_status: Optional[
-        WorkerAvailabilityStatus
-    ] = None
-
-    ussd_pincode: Optional[str] = None
+    ussd_pincode: Optional[str] = Field(
+        default=None,
+        min_length=4,
+        max_length=4,
+    )
 
     @field_validator("ussd_pincode")
     @classmethod
@@ -113,7 +113,6 @@ class ExtensionWorkerUpdate(BaseModel):
         cls,
         value: Optional[str],
     ) -> Optional[str]:
-
         if value is None:
             return value
 
@@ -125,30 +124,19 @@ class ExtensionWorkerUpdate(BaseModel):
         return value
 
 
-
 class ExtensionWorkerRead(BaseModel):
-
     model_config = ConfigDict(
         from_attributes=True
     )
 
     worker_id: uuid.UUID
-
     user_id: uuid.UUID
-
     location_id: uuid.UUID
-
     assigned_ward_name: str
-
     availability_status: WorkerAvailabilityStatus
-
     created_at: datetime
-
     last_updated_at: datetime
 
 
-
-
 class ExtensionWorkerStatusUpdate(BaseModel):
-
     availability_status: WorkerAvailabilityStatus
