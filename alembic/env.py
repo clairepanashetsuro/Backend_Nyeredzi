@@ -2,6 +2,7 @@ import asyncio
 import os
 import sys
 from logging.config import fileConfig
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from alembic import context
 from dotenv import load_dotenv
@@ -32,6 +33,24 @@ if database_url:
         "postgresql+asyncpg://",
         1,
     )
+
+    parsed = urlsplit(database_url)
+    query = [
+        (key, value)
+        for key, value in parse_qsl(parsed.query, keep_blank_values=True)
+        if key != "sslmode"
+    ]
+
+    database_url = urlunsplit(
+        (
+            parsed.scheme,
+            parsed.netloc,
+            parsed.path,
+            urlencode(query),
+            parsed.fragment,
+        )
+    )
+
     config.set_main_option("sqlalchemy.url", database_url)
 
 if config.config_file_name is not None:
