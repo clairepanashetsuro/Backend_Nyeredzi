@@ -1,3 +1,4 @@
+
 import asyncio
 import os
 import sys
@@ -38,7 +39,7 @@ if database_url:
     query = [
         (key, value)
         for key, value in parse_qsl(parsed.query, keep_blank_values=True)
-        if key != "sslmode"
+        if key not in {"sslmode", "channel_binding"}
     ]
 
     database_url = urlunsplit(
@@ -100,3 +101,4 @@ if context.is_offline_mode():
     run_migrations_offline()
 else:
     asyncio.run(run_migrations_online())
+
