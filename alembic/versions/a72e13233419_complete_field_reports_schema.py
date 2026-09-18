@@ -1,4 +1,3 @@
-
 """complete field reports schema
 
 Revision ID: a72e13233419
@@ -18,6 +17,15 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    status_enum = sa.Enum(
+        "PENDING",
+        "COMPLETED",
+        "ERROR",
+        name="status_enum",
+    )
+
+    status_enum.create(op.get_bind(), checkfirst=True)
+
     op.add_column(
         "field_reports",
         sa.Column(
@@ -41,12 +49,7 @@ def upgrade() -> None:
         "field_reports",
         sa.Column(
             "status",
-            sa.Enum(
-                "PENDING",
-                "COMPLETED",
-                "ERROR",
-                name="status_enum",
-            ),
+            status_enum,
             nullable=False,
             server_default="PENDING",
         ),
@@ -135,6 +138,17 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    status_enum = sa.Enum(
+        "PENDING",
+        "COMPLETED",
+        "ERROR",
+        name="status_enum",
+    )
+
+    op.drop_column("field_reports", "status")
+
+    status_enum.drop(op.get_bind(), checkfirst=True)
+
     op.execute(
         """
         CREATE TYPE issuetype AS ENUM (
@@ -219,17 +233,6 @@ def downgrade() -> None:
 
     op.alter_column(
         "field_reports",
-        "timestamp_captured",
-        new_column_name="captured_at",
+        "description_type",
+        server_default=None,
     )
-
-    op.alter_column(
-        "field_reports",
-        "timestamp_synced",
-        new_column_name="synced_at",
-    )
-
-    op.drop_column("field_reports", "status")
-    op.drop_column("field_reports", "ussd_info")
-    op.drop_column("field_reports", "description_type")
-
