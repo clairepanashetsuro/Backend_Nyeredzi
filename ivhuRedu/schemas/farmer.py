@@ -3,6 +3,7 @@ import uuid
 
 from datetime import datetime
 from typing import Optional
+from ivhuRedu.schemas.user import UserDetailsRead
 
 from pydantic import (
     BaseModel,
@@ -94,6 +95,10 @@ class FarmerRead(BaseModel):
 
     created_at: datetime
     updated_at: datetime
+
+    user: UserDetailsRead
+
+
 
 
 class FarmerUpdate(BaseModel):

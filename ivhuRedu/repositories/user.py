@@ -62,7 +62,8 @@ class UserRepository:
         result = await db.execute(
             select(Farmer)
             .options(
-                selectinload(Farmer.user)
+                selectinload(Farmer.user),
+                selectinload(Farmer.location),
             )
         )
 
@@ -155,4 +156,6 @@ class UserRepository:
 
         return result.scalar_one()
 
+
 user_repository = UserRepository()
+

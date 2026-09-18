@@ -14,8 +14,6 @@ from ivhuRedu.schemas.farmer import (
     FarmerUpdate,
 )
 
-from ivhuRedu.schemas.user import FarmerWithUserRead
-
 from ivhuRedu.repositories.user import user_repository
 
 from ivhuRedu.services import farmer as farmer_service
@@ -49,7 +47,7 @@ async def create_farmer(
 
 @router.get(
     "/",
-    response_model=list[FarmerWithUserRead],
+    response_model=list[FarmerRead],
 )
 async def get_farmers(
     db: AsyncSession = Depends(get_db),
@@ -69,7 +67,7 @@ async def get_farmers(
 
 @router.get(
     "/{farmer_id}",
-    response_model=FarmerRead,
+    response_model=list[FarmerRead],
 )
 async def get_farmer(
     farmer_id: uuid.UUID,
