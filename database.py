@@ -1,5 +1,7 @@
 import os
 from collections.abc import AsyncGenerator
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.orm import declarative_base
 
@@ -18,6 +20,25 @@ elif database_url.startswith("postgresql://"):
         "postgresql://", "postgresql+asyncpg://", 1
     )
 
+if database_url.startswith("postgresql+asyncpg://"):
+    parsed = urlsplit(database_url)
+
+    query = [
+        (key, value)
+        for key, value in parse_qsl(parsed.query, keep_blank_values=True)
+        if key not in {"sslmode", "channel_binding"}
+    ]
+
+    database_url = urlunsplit(
+        (
+            parsed.scheme,
+            parsed.netloc,
+            parsed.path,
+            urlencode(query),
+            parsed.fragment,
+        )
+    )
+
 engine = create_async_engine(
     database_url,
     pool_pre_ping=True,
@@ -33,15 +54,13 @@ SessionLocal = async_sessionmaker(
 
 async_session = SessionLocal
 
+
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
-    """
-    Yields an async database session for incoming FastAPI requests
-    and guarantees its safe closure afterward.
-    """
     async with SessionLocal() as session:
         try:
             yield session
         finally:
             await session.close()
+
 
 Base = declarative_base()
