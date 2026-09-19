@@ -15,6 +15,8 @@ class Token(BaseModel):
 
     role: str
 
+    worker_id: Optional[str] = None
+
     must_change_password: bool
 
 

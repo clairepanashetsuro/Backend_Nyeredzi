@@ -110,12 +110,26 @@ async def login(
             data=token_data,
         )
 
+    worker_id = None
+
+    if user.user_type == UserType.EXTENSION_WORKER:
+        if user.extension_worker is None:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Extension Worker profile not found.",
+            )
+
+        worker_id = str(
+            user.extension_worker.worker_id
+        )
+
     return {
         "access_token": access_token,
         "refresh_token": refresh_token,
         "offline_token": offline_token,
         "token_type": "bearer",
         "role": user.user_type.value,
+        "worker_id": worker_id,
         "must_change_password": user.must_change_password,
     }
 

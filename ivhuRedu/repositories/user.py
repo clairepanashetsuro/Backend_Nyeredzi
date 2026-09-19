@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import uuid
+
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -60,7 +61,7 @@ class UserRepository:
         db: AsyncSession,
     ) -> list[Farmer]:
         result = await db.execute(
-            select(Farmer)
+            select(ExtensionWorker)
             .options(
                 selectinload(Farmer.user),
                 selectinload(Farmer.location),
@@ -88,7 +89,12 @@ class UserRepository:
         phone_number: str,
     ) -> User | None:
         result = await db.execute(
-            select(User).where(
+            select(User)
+            .options(
+                selectinload(User.extension_worker),
+                selectinload(User.farmer),
+            )
+            .where(
                 User.phone_number == phone_number
             )
         )
@@ -101,7 +107,12 @@ class UserRepository:
         user_type,
     ) -> list[User]:
         result = await db.execute(
-            select(User).where(
+            select(User)
+            .options(
+                selectinload(User.extension_worker),
+                selectinload(User.farmer),
+            )
+            .where(
                 User.user_type == user_type
             )
         )
@@ -158,4 +169,3 @@ class UserRepository:
 
 
 user_repository = UserRepository()
-
