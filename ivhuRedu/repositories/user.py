@@ -1,3 +1,4 @@
+
 from __future__ import annotations
 
 import uuid
@@ -61,7 +62,7 @@ class UserRepository:
         db: AsyncSession,
     ) -> list[Farmer]:
         result = await db.execute(
-            select(ExtensionWorker)
+            select(Farmer)
             .options(
                 selectinload(Farmer.user),
                 selectinload(Farmer.location),
@@ -169,3 +170,4 @@ class UserRepository:
 
 
 user_repository = UserRepository()
+
