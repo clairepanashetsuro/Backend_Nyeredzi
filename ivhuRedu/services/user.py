@@ -1,4 +1,3 @@
-
 import logging
 import uuid
 
@@ -53,11 +52,9 @@ async def create_user(
     user_type: UserType,
 ):
     if data.email:
-        existing_email = (
-            await user_repository.get_by_email(
-                db,
-                data.email,
-            )
+        existing_email = await user_repository.get_by_email(
+            db,
+            data.email,
         )
 
         if existing_email:
@@ -66,12 +63,9 @@ async def create_user(
                 detail="A user with this email already exists",
             )
 
-
-    existing_phone = (
-        await user_repository.get_by_phone_number(
-            db,
-            data.phone_number,
-        )
+    existing_phone = await user_repository.get_by_phone_number(
+        db,
+        data.phone_number,
     )
 
     if existing_phone:
@@ -80,24 +74,18 @@ async def create_user(
             detail="A user with this phone number already exists",
         )
 
-
     if user_type == UserType.SUPERVISOR and not data.password:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Password is required when creating a supervisor.",
         )
 
-    payload = data.model_dump(
-        exclude={"password"}
-    )
+    payload = data.model_dump(exclude={"password"})
 
     payload["user_type"] = user_type
 
-
     if data.password:
-        payload["hashed_password"] = await hash_password(
-            data.password
-        )
+        payload["hashed_password"] = await hash_password(data.password)
         payload["must_change_password"] = True
     else:
         payload["hashed_password"] = None
@@ -112,9 +100,7 @@ async def create_user(
     except IntegrityError:
         await db.rollback()
 
-        logger.exception(
-            "Integrity error creating user"
-        )
+        logger.exception("Integrity error creating user")
 
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -137,12 +123,8 @@ async def update_user(
         exclude={"password"},
     )
 
-
     if data.password:
-        update_data["hashed_password"] = await hash_password(
-            data.password
-        )
-
+        update_data["hashed_password"] = await hash_password(data.password)
 
         update_data["must_change_password"] = True
 
@@ -156,9 +138,7 @@ async def update_user(
     except IntegrityError:
         await db.rollback()
 
-        logger.exception(
-            "Integrity error updating user"
-        )
+        logger.exception("Integrity error updating user")
 
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -179,12 +159,20 @@ async def delete_user(
         id,
     )
 
-    await user_repository.delete(
-        db,
-        user,
-    )
+    try:
+        await user_repository.delete(
+            db,
+            user,
+        )
 
-    return {
-        "message": "User deleted successfully"
-    }
+    except IntegrityError:
+        await db.rollback()
 
+        logger.exception("Integrity error deleting user")
+
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="User cannot be deleted while other records depend on it",
+        )
+
+    return {"message": "User deleted successfully"}

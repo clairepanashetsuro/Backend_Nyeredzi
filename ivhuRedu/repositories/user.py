@@ -1,9 +1,8 @@
-
 from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -13,7 +12,6 @@ from ivhuRedu.models.extension_worker import ExtensionWorker
 
 
 class UserRepository:
-
     async def get(
         self,
         db: AsyncSession,
@@ -35,8 +33,7 @@ class UserRepository:
         db: AsyncSession,
     ) -> list[User]:
         result = await db.execute(
-            select(User)
-            .options(
+            select(User).options(
                 selectinload(User.extension_worker),
                 selectinload(User.farmer),
             )
@@ -49,10 +46,7 @@ class UserRepository:
         db: AsyncSession,
     ) -> list[ExtensionWorker]:
         result = await db.execute(
-            select(ExtensionWorker)
-            .options(
-                selectinload(ExtensionWorker.user)
-            )
+            select(ExtensionWorker).options(selectinload(ExtensionWorker.user))
         )
 
         return result.scalars().all()
@@ -62,8 +56,7 @@ class UserRepository:
         db: AsyncSession,
     ) -> list[Farmer]:
         result = await db.execute(
-            select(Farmer)
-            .options(
+            select(Farmer).options(
                 selectinload(Farmer.user),
                 selectinload(Farmer.location),
             )
@@ -76,11 +69,7 @@ class UserRepository:
         db: AsyncSession,
         email: str,
     ) -> User | None:
-        result = await db.execute(
-            select(User).where(
-                User.email == email
-            )
-        )
+        result = await db.execute(select(User).where(User.email == email))
 
         return result.scalar_one_or_none()
 
@@ -95,9 +84,7 @@ class UserRepository:
                 selectinload(User.extension_worker),
                 selectinload(User.farmer),
             )
-            .where(
-                User.phone_number == phone_number
-            )
+            .where(User.phone_number == phone_number)
         )
 
         return result.scalar_one_or_none()
@@ -113,9 +100,7 @@ class UserRepository:
                 selectinload(User.extension_worker),
                 selectinload(User.farmer),
             )
-            .where(
-                User.user_type == user_type
-            )
+            .where(User.user_type == user_type)
         )
 
         return result.scalars().all()
@@ -168,6 +153,14 @@ class UserRepository:
 
         return result.scalar_one()
 
+    async def delete(
+        self,
+        db: AsyncSession,
+        user: User,
+    ) -> None:
+        await db.execute(delete(User).where(User.id == user.id))
+
+        await db.commit()
+
 
 user_repository = UserRepository()
-
