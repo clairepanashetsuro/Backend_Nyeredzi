@@ -33,11 +33,7 @@ router = APIRouter(
 async def create_farmer(
     data: FarmerCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(
-        require_roles(
-            UserType.EXTENSION_WORKER
-        )
-    ),
+    current_user: User = Depends(require_roles(UserType.EXTENSION_WORKER)),
 ):
     return await farmer_service.create_farmer(
         db=db,
@@ -56,13 +52,10 @@ async def get_farmers(
             UserType.SUPERVISOR,
             UserType.ADMIN,
             UserType.EXTENSION_WORKER,
-
         )
     ),
 ):
-    return await user_repository.get_all_farmers(
-        db
-    )
+    return await user_repository.get_all_farmers(db)
 
 
 @router.get(
@@ -122,7 +115,6 @@ async def delete_farmer(
         require_roles(
             UserType.ADMIN,
             UserType.EXTENSION_WORKER,
-
         )
     ),
 ):
