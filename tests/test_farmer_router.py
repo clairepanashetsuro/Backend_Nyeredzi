@@ -1,3 +1,4 @@
+
 import uuid
 
 import pytest
@@ -6,14 +7,14 @@ from fastapi.exceptions import ResponseValidationError
 from ivhuRedu.models.user import UserType
 
 
-def body(location_id, **overrides):
+def body(default_location_id, **overrides):
     data = {
         "first_name": "Chipo",
         "last_name": "Ncube",
         "phone_number": "+263772220000",
         "primary_crop": "maize",
         "ward_name": "Ward 4",
-        "location_id": str(location_id),
+        "location_id": str(default_location_id),
     }
     data.update(overrides)
     return data
@@ -25,7 +26,9 @@ async def test_extension_worker_can_register_farmer(
     worker_user, _ = await make_worker()
     loc = await make_location()
     r = await client.post(
-        "/farmers/", headers=await auth_headers(worker_user), json=body(loc.location_id)
+        "/farmers/",
+        headers=await auth_headers(worker_user),
+        json=body(loc.location_id),
     )
     assert r.status_code == 201
     data = r.json()
@@ -43,14 +46,17 @@ async def test_register_farmer_forbidden_for_other_roles(
     caller = await make_user(user_type=role)
     loc = await make_location()
     r = await client.post(
-        "/farmers/", headers=await auth_headers(caller), json=body(loc.location_id)
+        "/farmers/",
+        headers=await auth_headers(caller),
+        json=body(loc.location_id),
     )
     assert r.status_code == 403
 
 
 async def test_register_farmer_requires_authentication(client, make_location):
     loc = await make_location()
-    assert (await client.post("/farmers/", json=body(loc.location_id))).status_code == 401
+    r = await client.post("/farmers/", json=body(loc.location_id))
+    assert r.status_code == 401
 
 
 async def test_register_farmer_duplicate_phone_is_409(
@@ -60,7 +66,9 @@ async def test_register_farmer_duplicate_phone_is_409(
     await make_user(phone="+263772220000")
     loc = await make_location()
     r = await client.post(
-        "/farmers/", headers=await auth_headers(worker_user), json=body(loc.location_id)
+        "/farmers/",
+        headers=await auth_headers(worker_user),
+        json=body(loc.location_id),
     )
     assert r.status_code == 409
 
@@ -70,7 +78,9 @@ async def test_register_farmer_unknown_location_is_409(
 ):
     worker_user, _ = await make_worker()
     r = await client.post(
-        "/farmers/", headers=await auth_headers(worker_user), json=body(uuid.uuid4())
+        "/farmers/",
+        headers=await auth_headers(worker_user),
+        json=body(uuid.uuid4()),
     )
     assert r.status_code == 409
 
@@ -121,7 +131,8 @@ async def test_list_farmers_forbidden_for_farmer(client, make_farmer, auth_heade
 
 
 async def test_list_farmers_requires_authentication(client):
-    assert (await client.get("/farmers/")).status_code == 401
+    r = await client.get("/farmers/")
+    assert r.status_code == 401
 
 
 @pytest.mark.xfail(
@@ -136,7 +147,8 @@ async def test_get_single_farmer_returns_the_farmer(
     admin = await make_user()
     _, farmer = await make_farmer()
     r = await client.get(
-        f"/farmers/{farmer.farmer_id}", headers=await auth_headers(admin)
+        f"/farmers/{farmer.farmer_id}",
+        headers=await auth_headers(admin),
     )
     assert r.status_code == 200
     assert r.json()["farmer_id"] == str(farmer.farmer_id)
@@ -144,7 +156,10 @@ async def test_get_single_farmer_returns_the_farmer(
 
 async def test_get_single_farmer_unknown_is_404(client, make_user, auth_headers):
     admin = await make_user()
-    r = await client.get(f"/farmers/{uuid.uuid4()}", headers=await auth_headers(admin))
+    r = await client.get(
+        f"/farmers/{uuid.uuid4()}",
+        headers=await auth_headers(admin),
+    )
     assert r.status_code == 404
 
 
@@ -153,7 +168,8 @@ async def test_get_single_farmer_forbidden_for_farmer(
 ):
     user, farmer = await make_farmer()
     r = await client.get(
-        f"/farmers/{farmer.farmer_id}", headers=await auth_headers(user)
+        f"/farmers/{farmer.farmer_id}",
+        headers=await auth_headers(user),
     )
     assert r.status_code == 403
 
@@ -175,7 +191,9 @@ async def test_update_farmer_allowed_roles(
     assert r.json()["ward_name"] == "Ward 77"
 
 
-async def test_update_farmer_forbidden_for_farmer(client, make_farmer, auth_headers):
+async def test_update_farmer_forbidden_for_farmer(
+    client, make_farmer, auth_headers
+):
     user, farmer = await make_farmer()
     r = await client.put(
         f"/farmers/{farmer.farmer_id}",
@@ -218,7 +236,9 @@ async def test_update_farmer_validation_errors(
     admin = await make_user()
     _, farmer = await make_farmer()
     r = await client.put(
-        f"/farmers/{farmer.farmer_id}", headers=await auth_headers(admin), json=payload
+        f"/farmers/{farmer.farmer_id}",
+        headers=await auth_headers(admin),
+        json=payload,
     )
     assert r.status_code == 422
 
@@ -230,7 +250,8 @@ async def test_delete_farmer_allowed_roles(
     _, farmer = await make_farmer()
     caller = await make_user(user_type=role)
     r = await client.delete(
-        f"/farmers/{farmer.farmer_id}", headers=await auth_headers(caller)
+        f"/farmers/{farmer.farmer_id}",
+        headers=await auth_headers(caller),
     )
     assert r.status_code == 200
     assert r.json() == {"message": "Farmer deleted successfully."}
@@ -242,7 +263,8 @@ async def test_delete_farmer_forbidden_for_supervisor(
     _, farmer = await make_farmer()
     caller = await make_user(user_type=UserType.SUPERVISOR)
     r = await client.delete(
-        f"/farmers/{farmer.farmer_id}", headers=await auth_headers(caller)
+        f"/farmers/{farmer.farmer_id}",
+        headers=await auth_headers(caller),
     )
     assert r.status_code == 403
 
@@ -250,6 +272,7 @@ async def test_delete_farmer_forbidden_for_supervisor(
 async def test_delete_farmer_unknown_is_404(client, make_user, auth_headers):
     admin = await make_user()
     r = await client.delete(
-        f"/farmers/{uuid.uuid4()}", headers=await auth_headers(admin)
+        f"/farmers/{uuid.uuid4()}",
+        headers=await auth_headers(admin),
     )
     assert r.status_code == 404

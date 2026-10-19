@@ -6,16 +6,17 @@ from ivhuRedu.models.extension_worker import WorkerAvailabilityStatus
 from ivhuRedu.models.user import UserType
 
 
-def body(location_id, **overrides):
+def body(default_location_id, **overrides):
     data = {
-        "first_name": "Farai",
-        "last_name": "Dube",
+        
+        "first_name": "Tendai",
+        "last_name": "Moyo",
         "phone_number": "+263775550000",
-        "email": "farai@example.com",
+        "email": "worker@example.com",
         "password": "Password123",
         "ussd_pincode": "1234",
         "assigned_ward_name": "Ward 5",
-        "location_id": str(location_id),
+        "location_id": str(default_location_id),
     }
     data.update(overrides)
     return data
