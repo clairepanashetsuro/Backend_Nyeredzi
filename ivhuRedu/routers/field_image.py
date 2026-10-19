@@ -14,8 +14,14 @@ from ivhuRedu.schemas.field_image import (
 router = APIRouter(prefix="/field-images", tags=["Field Images"])
 
 
-@router.post("/upload/{report_id}", response_model=ReportImageResponse, status_code=status.HTTP_201_CREATED)
-async def upload_image(report_id: UUID, file: UploadFile = File(...), db: AsyncSession = Depends(get_db)):
+@router.post(
+    "/upload/{report_id}",
+    response_model=ReportImageResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def upload_image(
+    report_id: UUID, file: UploadFile = File(...), db: AsyncSession = Depends(get_db)
+):
     service = FieldImageService(db)
     return await service.encrypt_and_store_image(report_id, file)
 
@@ -23,11 +29,9 @@ async def upload_image(report_id: UUID, file: UploadFile = File(...), db: AsyncS
 @router.get("/download/{image_id}")
 async def view_decrypted_image(image_id: UUID, db: AsyncSession = Depends(get_db)):
     service = FieldImageService(db)
-    
-   
+
     decrypted_bytes = await service.get_decrypted_image_bytes(image_id)
-    
-   
+
     return Response(content=decrypted_bytes, media_type="image/jpeg")
 
 
@@ -44,7 +48,9 @@ async def get_image(image_id: UUID, db: AsyncSession = Depends(get_db)):
 
 
 @router.put("/{image_id}", response_model=ReportImageResponse)
-async def update_image(image_id: UUID, data: ReportImageUpdate, db: AsyncSession = Depends(get_db)):
+async def update_image(
+    image_id: UUID, data: ReportImageUpdate, db: AsyncSession = Depends(get_db)
+):
     service = FieldImageService(db)
     return await service.update_image(image_id, data)
 
