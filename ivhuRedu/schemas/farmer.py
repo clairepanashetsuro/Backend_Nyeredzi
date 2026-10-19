@@ -13,15 +13,11 @@ from pydantic import (
 )
 
 
-PHONE_REGEX = re.compile(
-    r"^\+?[0-9]{7,15}$"
-)
+PHONE_REGEX = re.compile(r"^\+?[0-9]{7,15}$")
 
 
 class LocationRead(BaseModel):
-    model_config = ConfigDict(
-        from_attributes=True
-    )
+    model_config = ConfigDict(from_attributes=True)
 
     location_id: uuid.UUID
     latitude: float
@@ -31,7 +27,6 @@ class LocationRead(BaseModel):
 
 
 class FarmerCreate(BaseModel):
-
     first_name: str = Field(
         ...,
         min_length=2,
@@ -79,10 +74,7 @@ class FarmerCreate(BaseModel):
 
 
 class FarmerRead(BaseModel):
-
-    model_config = ConfigDict(
-        from_attributes=True
-    )
+    model_config = ConfigDict(from_attributes=True)
 
     farmer_id: uuid.UUID
     user_id: uuid.UUID
@@ -99,10 +91,7 @@ class FarmerRead(BaseModel):
     user: UserDetailsRead
 
 
-
-
 class FarmerUpdate(BaseModel):
-
     first_name: Optional[str] = Field(
         default=None,
         min_length=2,
@@ -140,10 +129,7 @@ class FarmerUpdate(BaseModel):
         value: Optional[str],
     ) -> Optional[str]:
 
-        if (
-            value is not None
-            and not PHONE_REGEX.match(value)
-        ):
+        if value is not None and not PHONE_REGEX.match(value):
             raise ValueError(
                 "phone_number must contain only digits "
                 "(7-15 of them), with an optional leading +"
