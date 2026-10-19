@@ -17,7 +17,7 @@ from ivhuRedu.models.field_report import FieldReport
 from ivhuRedu.models.field_image import FieldImage
 from ivhuRedu.models.location import Location
 from ivhuRedu.models.password_reset_otp import PasswordResetOTP
-from ivhuRedu.models.ussd import USSDSession 
+from ivhuRedu.models.ussd import USSDSession
 
 from ivhuRedu.services.security import hash_password
 
@@ -35,11 +35,14 @@ from ivhuRedu.routers.sms import router as sms_router
 load_dotenv()
 logger = logging.getLogger("uvicorn.error")
 
+
 async def onboard_default_admin() -> None:
     admin_phone = os.getenv("ADMIN_PHONE_NUMBER")
     admin_password = os.getenv("ADMIN_PASSWORD")
     if not admin_phone or not admin_password:
-        logger.warning("ADMIN_PHONE_NUMBER or ADMIN_PASSWORD not set. Skipping administrator creation.")
+        logger.warning(
+            "ADMIN_PHONE_NUMBER or ADMIN_PASSWORD not set. Skipping administrator creation."
+        )
         return
     async with async_session() as db:
         result = await db.execute(select(User).where(User.user_type == UserType.ADMIN))
@@ -60,15 +63,15 @@ async def onboard_default_admin() -> None:
         await db.commit()
         logger.info("Default administrator account created.")
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await onboard_default_admin()
     yield
 
+
 app = FastAPI(
-    title="IvhuRedu Agricultural Platform API",
-    version="1.0.0",
-    lifespan=lifespan
+    title="IvhuRedu Agricultural Platform API", version="1.0.0", lifespan=lifespan
 )
 
 allowed_origins = os.getenv("ALLOWED_ORIGINS", "*").split(",")
@@ -86,20 +89,36 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(auth_router.router, prefix="/auth", tags=["Authentication"])
-app.include_router(user_router.router, prefix="/users", tags=["Users"])
-app.include_router(farmer_router.router, prefix="/farmers", tags=["Farmers"])
-app.include_router(extension_worker_router.router, prefix="/extension-workers", tags=["Extension Workers"])
-app.include_router(location_router, prefix="/locations", tags=["Locations"])
-app.include_router(farmer_request_router, prefix="/farmer-requests", tags=["Farmer Requests"])
-app.include_router(field_image_router, prefix="/field-images", tags=["Field Images"])
-app.include_router(field_report_router, prefix="/field-reports", tags=["Field Reports"])
-app.include_router(sms_router, prefix="/sms", tags=["SMS Broadcasts"])
+
+app.include_router(
+    auth_router.router,
+    prefix="/auth",
+    tags=["Authentication"],
+)
+
+app.include_router(
+    user_router.router,
+    prefix="/users",
+    tags=["Users"],
+)
+app.include_router(farmer_router.router, tags=["Farmers"])
+app.include_router(extension_worker_router.router, tags=["Extension Workers"])
+app.include_router(location_router, tags=["Locations"])
+app.include_router(field_image_router, tags=["Field Images"])
+app.include_router(field_report_router, tags=["Field Reports"])
+app.include_router(
+    farmer_request_router,
+    prefix="/farmer-requests",
+    tags=["Farmer Requests"],
+)
+app.include_router(sms_router, tags=["SMS Broadcasts"])
 app.include_router(ussd_router)
+
 
 @app.get("/")
 def read_root():
     return {"message": "Welcome to the IvhuRedu API", "status": "ok"}
+
 
 @app.get("/health")
 async def health_check():
