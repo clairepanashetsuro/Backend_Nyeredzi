@@ -14,9 +14,7 @@ from pydantic import (
 from ivhuRedu.models.user import UserType
 
 
-PHONE_REGEX = re.compile(
-    r"^\+?[0-9]{7,15}$"
-)
+PHONE_REGEX = re.compile(r"^\+?[0-9]{7,15}$")
 
 
 class UserBase(BaseModel):
@@ -59,9 +57,7 @@ class UserCreate(UserBase):
         value: Optional[str],
     ) -> Optional[str]:
         if value is not None and len(value) < 8:
-            raise ValueError(
-                "password must be at least 8 characters long"
-            )
+            raise ValueError("password must be at least 8 characters long")
         return value
 
 
@@ -78,10 +74,7 @@ class UserUpdate(BaseModel):
         cls,
         value: Optional[str],
     ) -> Optional[str]:
-        if (
-            value is not None
-            and not PHONE_REGEX.match(value)
-        ):
+        if value is not None and not PHONE_REGEX.match(value):
             raise ValueError(
                 "phone_number must contain only digits "
                 "(7-15 of them), with an optional leading +"
@@ -95,9 +88,7 @@ class UserUpdate(BaseModel):
         value: Optional[str],
     ) -> Optional[str]:
         if value is not None and len(value) < 8:
-            raise ValueError(
-                "password must be at least 8 characters long"
-            )
+            raise ValueError("password must be at least 8 characters long")
         return value
 
 
@@ -141,7 +132,6 @@ class UserRead(BaseModel):
 
 
 class UserDetailsRead(BaseModel):
-
     model_config = ConfigDict(from_attributes=True)
 
     id: uuid.UUID
@@ -155,7 +145,6 @@ class UserDetailsRead(BaseModel):
 
 
 class ExtensionWorkerWithUserRead(BaseModel):
-
     model_config = ConfigDict(from_attributes=True)
 
     worker_id: uuid.UUID
@@ -169,7 +158,6 @@ class ExtensionWorkerWithUserRead(BaseModel):
 
 
 class FarmerWithUserRead(BaseModel):
-
     model_config = ConfigDict(from_attributes=True)
 
     farmer_id: uuid.UUID

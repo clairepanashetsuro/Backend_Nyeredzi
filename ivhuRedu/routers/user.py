@@ -20,6 +20,7 @@ from ivhuRedu.services import user as user_service
 
 router = APIRouter()
 
+
 @router.post(
     "/",
     response_model=UserRead,
@@ -29,15 +30,14 @@ async def create_user(
     data: UserCreate,
     user_type: UserType = UserType.SUPERVISOR,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(
-        require_roles(UserType.ADMIN)
-    ),
+    current_user: User = Depends(require_roles(UserType.ADMIN)),
 ):
     return await user_service.create_user(
         db=db,
         data=data,
         user_type=user_type,
     )
+
 
 @router.get(
     "/",
@@ -56,6 +56,7 @@ async def list_users(
 ):
     return await user_service.list_users(db)
 
+
 @router.get(
     "/{id}",
     response_model=UserDetailsRead,
@@ -63,9 +64,7 @@ async def list_users(
 async def get_user(
     id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(
-        require_password_changed
-    ),
+    current_user: User = Depends(require_password_changed),
 ):
     ensure_self_or_privileged(
         id,
@@ -76,6 +75,7 @@ async def get_user(
         id,
     )
 
+
 @router.put(
     "/{id}",
     response_model=UserDetailsRead,
@@ -84,9 +84,7 @@ async def update_user(
     id: uuid.UUID,
     data: UserUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(
-        require_password_changed
-    ),
+    current_user: User = Depends(require_password_changed),
 ):
     ensure_self_or_privileged(
         id,
@@ -98,16 +96,11 @@ async def update_user(
         data,
     )
 
+
 @router.delete(
     "/{id}",
     status_code=status.HTTP_200_OK,
-    dependencies=[
-        Depends(
-            require_roles(
-                UserType.ADMIN
-            )
-        )
-    ],
+    dependencies=[Depends(require_roles(UserType.ADMIN))],
 )
 async def delete_user(
     id: uuid.UUID,
