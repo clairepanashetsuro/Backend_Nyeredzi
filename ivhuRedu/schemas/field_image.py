@@ -2,8 +2,10 @@ from datetime import datetime
 from uuid import UUID
 from pydantic import BaseModel, ConfigDict
 
+
 class ReportImageBase(BaseModel):
-    file_url: str 
+    file_url: str
+
 
 class ReportImageCreate(ReportImageBase):
     report_id: UUID
@@ -11,6 +13,7 @@ class ReportImageCreate(ReportImageBase):
 
 class ReportImageUpdate(BaseModel):
     file_url: str | None = None
+
 
 class ReportImageResponse(ReportImageBase):
     image_id: UUID

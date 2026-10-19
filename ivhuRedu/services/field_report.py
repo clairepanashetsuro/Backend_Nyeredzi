@@ -13,7 +13,6 @@ from ivhuRedu.schemas.field_report import (
 
 
 class FieldReportService:
-
     def __init__(self, db: AsyncSession):
         self.repo = FieldReportRepository(db)
 
@@ -23,10 +22,7 @@ class FieldReportService:
         current_user,
     ):
 
-        if (
-            not data.description_type
-            or not data.description_type.strip()
-        ):
+        if not data.description_type or not data.description_type.strip():
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail="description_type is required.",
@@ -63,9 +59,7 @@ class FieldReportService:
                 detail="Extension Worker profile not found.",
             )
 
-        return await self.repo.get_by_worker(
-            current_user.extension_worker.worker_id
-        )
+        return await self.repo.get_by_worker(current_user.extension_worker.worker_id)
 
     async def get_by_id(
         self,
@@ -95,10 +89,7 @@ class FieldReportService:
                 detail="Extension Worker profile not found.",
             )
 
-        if (
-            report.worker_id
-            != current_user.extension_worker.worker_id
-        ):
+        if report.worker_id != current_user.extension_worker.worker_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Not authorized to access this report",
@@ -126,10 +117,7 @@ class FieldReportService:
                 detail="Extension Worker profile not found.",
             )
 
-        if (
-            worker_id
-            != current_user.extension_worker.worker_id
-        ):
+        if worker_id != current_user.extension_worker.worker_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Not authorized to access these reports",
@@ -148,10 +136,7 @@ class FieldReportService:
             current_user,
         )
 
-        if (
-            data.description_type is not None
-            and not data.description_type.strip()
-        ):
+        if data.description_type is not None and not data.description_type.strip():
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail="Description type cannot be empty",
@@ -185,9 +170,7 @@ class FieldReportService:
             current_user,
         )
 
-        deleted = await self.repo.delete(
-            report_id
-        )
+        deleted = await self.repo.delete(report_id)
 
         if not deleted:
             raise HTTPException(

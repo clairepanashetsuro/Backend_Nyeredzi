@@ -22,10 +22,7 @@ class FarmerRequestRepository:
 
         return db_request
 
-    async def create_multiple(
-        self,
-        requests_data: List[dict]
-    ) -> List[FarmerRequest]:
+    async def create_multiple(self, requests_data: List[dict]) -> List[FarmerRequest]:
 
         created = []
 
@@ -42,80 +39,48 @@ class FarmerRequestRepository:
 
         return created
 
-    async def get_by_phone(
-        self,
-        phone_number: str
-    ) -> List[FarmerRequest]:
+    async def get_by_phone(self, phone_number: str) -> List[FarmerRequest]:
 
         stmt = (
             select(FarmerRequest)
-            .filter(
-                FarmerRequest.phone_number == phone_number
-            )
-            .order_by(
-                FarmerRequest.created_at.desc()
-            )
+            .filter(FarmerRequest.phone_number == phone_number)
+            .order_by(FarmerRequest.created_at.desc())
         )
 
         result = await self.db.execute(stmt)
 
         return list(result.scalars().all())
 
-    async def get_all(
-        self,
-        skip: int = 0,
-        limit: int = 100
-    ) -> List[FarmerRequest]:
+    async def get_all(self, skip: int = 0, limit: int = 100) -> List[FarmerRequest]:
+
+        stmt = select(FarmerRequest).offset(skip).limit(limit)
+
+        result = await self.db.execute(stmt)
+
+        return list(result.scalars().all())
+
+    async def get_by_farmer_id(self, farmer_id: uuid.UUID) -> List[FarmerRequest]:
 
         stmt = (
             select(FarmerRequest)
-            .offset(skip)
-            .limit(limit)
+            .filter(FarmerRequest.farmer_id == farmer_id)
+            .order_by(FarmerRequest.created_at.desc())
         )
 
         result = await self.db.execute(stmt)
 
         return list(result.scalars().all())
 
-    async def get_by_farmer_id(
-        self,
-        farmer_id: uuid.UUID
-    ) -> List[FarmerRequest]:
+    async def get_by_id(self, request_id: uuid.UUID) -> Optional[FarmerRequest]:
 
-        stmt = (
-            select(FarmerRequest)
-            .filter(
-                FarmerRequest.farmer_id == farmer_id
-            )
-            .order_by(
-                FarmerRequest.created_at.desc()
-            )
-        )
-
-        result = await self.db.execute(stmt)
-
-        return list(result.scalars().all())
-
-    async def get_by_id(
-        self,
-        request_id: uuid.UUID
-    ) -> Optional[FarmerRequest]:
-
-        stmt = (
-            select(FarmerRequest)
-            .filter(
-                FarmerRequest.request_id == request_id
-            )
-        )
+        stmt = select(FarmerRequest).filter(FarmerRequest.request_id == request_id)
 
         result = await self.db.execute(stmt)
 
         return result.scalars().first()
 
     async def update(
-        self,
-        db_request: FarmerRequest,
-        update_data: dict
+        self, db_request: FarmerRequest, update_data: dict
     ) -> FarmerRequest:
 
         for field, value in update_data.items():
@@ -126,19 +91,13 @@ class FarmerRequestRepository:
 
         return db_request
 
-    async def delete(
-        self,
-        db_request: FarmerRequest
-    ) -> None:
+    async def delete(self, db_request: FarmerRequest) -> None:
 
         await self.db.delete(db_request)
 
         await self.db.commit()
 
-    async def search_by_keyword(
-        self,
-        keyword: str
-    ) -> List[FarmerRequest]:
+    async def search_by_keyword(self, keyword: str) -> List[FarmerRequest]:
 
         search = f"%{keyword}%"
 
@@ -150,12 +109,10 @@ class FarmerRequestRepository:
                     cast(FarmerRequest.status, String).ilike(search),
                     FarmerRequest.phone_number.ilike(search),
                     FarmerRequest.description.ilike(search),
-                    FarmerRequest.location.ilike(search)
+                    FarmerRequest.location.ilike(search),
                 )
             )
-            .order_by(
-                FarmerRequest.created_at.desc()
-            )
+            .order_by(FarmerRequest.created_at.desc())
         )
 
         result = await self.db.execute(stmt)
@@ -163,17 +120,10 @@ class FarmerRequestRepository:
         return list(result.scalars().all())
 
     async def assign_to_worker(
-        self,
-        request_ids: List[uuid.UUID],
-        worker_id: uuid.UUID
+        self, request_ids: List[uuid.UUID], worker_id: uuid.UUID
     ) -> List[FarmerRequest]:
 
-        stmt = (
-            select(FarmerRequest)
-            .filter(
-                FarmerRequest.request_id.in_(request_ids)
-            )
-        )
+        stmt = select(FarmerRequest).filter(FarmerRequest.request_id.in_(request_ids))
 
         result = await self.db.execute(stmt)
 
@@ -197,47 +147,23 @@ class FarmerRequestRepository:
                 FarmerRequest.phone_number,
                 FarmerRequest.request_type,
                 FarmerRequest.status,
-                func.min(
-                    FarmerRequest.created_at
-                ).label("min_created")
+                func.min(FarmerRequest.created_at).label("min_created"),
             )
             .group_by(
                 FarmerRequest.phone_number,
                 FarmerRequest.request_type,
-                FarmerRequest.status
+                FarmerRequest.status,
             )
-            .having(
-                func.count(
-                    FarmerRequest.request_id
-                ) > 1
-            )
+            .having(func.count(FarmerRequest.request_id) > 1)
             .subquery()
         )
 
-        stmt = (
-            select(FarmerRequest)
-            .join(
-                subquery,
-                (
-                    FarmerRequest.phone_number ==
-                    subquery.c.phone_number
-                )
-                &
-                (
-                    FarmerRequest.request_type ==
-                    subquery.c.request_type
-                )
-                &
-                (
-                    FarmerRequest.status ==
-                    subquery.c.status
-                )
-                &
-                (
-                    FarmerRequest.created_at >
-                    subquery.c.min_created
-                )
-            )
+        stmt = select(FarmerRequest).join(
+            subquery,
+            (FarmerRequest.phone_number == subquery.c.phone_number)
+            & (FarmerRequest.request_type == subquery.c.request_type)
+            & (FarmerRequest.status == subquery.c.status)
+            & (FarmerRequest.created_at > subquery.c.min_created),
         )
 
         result = await self.db.execute(stmt)
@@ -253,7 +179,6 @@ class FarmerRequestRepository:
 
         return count
 
-
     async def create_ussd_request(
         self,
         phone_number: str,
@@ -261,7 +186,7 @@ class FarmerRequestRepository:
         description: str,
         location: str,
         ussd_session_id: str,
-        farmer_id: Optional[uuid.UUID] = None
+        farmer_id: Optional[uuid.UUID] = None,
     ) -> FarmerRequest:
         """
         Create a request submitted through USSD.
@@ -282,9 +207,7 @@ class FarmerRequestRepository:
         return await self.create(request_data)
 
     async def get_ussd_requests_by_phone(
-        self,
-        phone_number: str,
-        limit: int = 5
+        self, phone_number: str, limit: int = 5
     ) -> List[FarmerRequest]:
         """
         Get the farmer's latest USSD requests.
@@ -292,12 +215,8 @@ class FarmerRequestRepository:
 
         stmt = (
             select(FarmerRequest)
-            .filter(
-                FarmerRequest.phone_number == phone_number
-            )
-            .order_by(
-                FarmerRequest.created_at.desc()
-            )
+            .filter(FarmerRequest.phone_number == phone_number)
+            .order_by(FarmerRequest.created_at.desc())
             .limit(limit)
         )
 
@@ -306,8 +225,7 @@ class FarmerRequestRepository:
         return list(result.scalars().all())
 
     async def get_ussd_request_by_session(
-        self,
-        session_id: str
+        self, session_id: str
     ) -> Optional[FarmerRequest]:
         """
         Find a request using the Africa's Talking USSD session ID.
@@ -315,12 +233,8 @@ class FarmerRequestRepository:
 
         stmt = (
             select(FarmerRequest)
-            .filter(
-                FarmerRequest.ussd_session_id == session_id
-            )
-            .order_by(
-                FarmerRequest.created_at.desc()
-            )
+            .filter(FarmerRequest.ussd_session_id == session_id)
+            .order_by(FarmerRequest.created_at.desc())
         )
 
         result = await self.db.execute(stmt)
@@ -328,9 +242,7 @@ class FarmerRequestRepository:
         return result.scalars().first()
 
     async def get_reports_by_phone(
-        self,
-        phone_number: str,
-        limit: int = 5
+        self, phone_number: str, limit: int = 5
     ) -> List[FarmerRequest]:
         """
         Get land degradation reports belonging to a farmer.
@@ -338,17 +250,9 @@ class FarmerRequestRepository:
 
         stmt = (
             select(FarmerRequest)
-            .filter(
-                FarmerRequest.phone_number == phone_number
-            )
-            .filter(
-                FarmerRequest.request_type.ilike(
-                    "%Land Degradation%"
-                )
-            )
-            .order_by(
-                FarmerRequest.created_at.desc()
-            )
+            .filter(FarmerRequest.phone_number == phone_number)
+            .filter(FarmerRequest.request_type.ilike("%Land Degradation%"))
+            .order_by(FarmerRequest.created_at.desc())
             .limit(limit)
         )
 
@@ -357,9 +261,7 @@ class FarmerRequestRepository:
         return list(result.scalars().all())
 
     async def get_reports_by_ward(
-        self,
-        ward_number: str,
-        limit: int = 10
+        self, ward_number: str, limit: int = 10
     ) -> List[FarmerRequest]:
         """
         Get land degradation reports for a ward.
@@ -369,17 +271,9 @@ class FarmerRequestRepository:
 
         stmt = (
             select(FarmerRequest)
-            .filter(
-                FarmerRequest.location == ward_number
-            )
-            .filter(
-                FarmerRequest.request_type.ilike(
-                    "%Land Degradation%"
-                )
-            )
-            .order_by(
-                FarmerRequest.created_at.desc()
-            )
+            .filter(FarmerRequest.location == ward_number)
+            .filter(FarmerRequest.request_type.ilike("%Land Degradation%"))
+            .order_by(FarmerRequest.created_at.desc())
             .limit(limit)
         )
 
@@ -388,8 +282,7 @@ class FarmerRequestRepository:
         return list(result.scalars().all())
 
     async def get_active_requests_by_phone(
-        self,
-        phone_number: str
+        self, phone_number: str
     ) -> List[FarmerRequest]:
         """
         Get active requests belonging to a farmer.
@@ -397,21 +290,9 @@ class FarmerRequestRepository:
 
         stmt = (
             select(FarmerRequest)
-            .filter(
-                FarmerRequest.phone_number == phone_number
-            )
-            .filter(
-                FarmerRequest.status.in_(
-                    [
-                        "pending",
-                        "assigned",
-                        "in_progress"
-                    ]
-                )
-            )
-            .order_by(
-                FarmerRequest.created_at.desc()
-            )
+            .filter(FarmerRequest.phone_number == phone_number)
+            .filter(FarmerRequest.status.in_(["pending", "assigned", "in_progress"]))
+            .order_by(FarmerRequest.created_at.desc())
         )
 
         result = await self.db.execute(stmt)

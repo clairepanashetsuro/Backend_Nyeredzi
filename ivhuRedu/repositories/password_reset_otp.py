@@ -8,7 +8,6 @@ from ivhuRedu.models.password_reset_otp import PasswordResetOTP
 
 
 class PasswordResetOTPRepository:
-
     async def get(
         self,
         db: AsyncSession,
@@ -28,12 +27,8 @@ class PasswordResetOTPRepository:
 
         result = await db.execute(
             select(PasswordResetOTP)
-            .where(
-                PasswordResetOTP.user_id == user_id
-            )
-            .order_by(
-                PasswordResetOTP.created_at.desc()
-            )
+            .where(PasswordResetOTP.user_id == user_id)
+            .order_by(PasswordResetOTP.created_at.desc())
         )
 
         return result.scalars().first()
@@ -52,9 +47,7 @@ class PasswordResetOTPRepository:
                 PasswordResetOTP.user_id == user_id,
                 PasswordResetOTP.expires_at > now,
             )
-            .order_by(
-                PasswordResetOTP.created_at.desc()
-            )
+            .order_by(PasswordResetOTP.created_at.desc())
         )
 
         return result.scalars().first()
@@ -66,14 +59,10 @@ class PasswordResetOTPRepository:
         minutes: int = 60,
     ) -> int:
 
-        since = (
-            datetime.now(timezone.utc)
-            - timedelta(minutes=minutes)
-        )
+        since = datetime.now(timezone.utc) - timedelta(minutes=minutes)
 
         result = await db.execute(
-            select(PasswordResetOTP.id)
-            .where(
+            select(PasswordResetOTP.id).where(
                 PasswordResetOTP.user_id == user_id,
                 PasswordResetOTP.created_at >= since,
             )
@@ -132,9 +121,7 @@ class PasswordResetOTPRepository:
     ) -> None:
 
         await db.execute(
-            delete(PasswordResetOTP).where(
-                PasswordResetOTP.user_id == user_id
-            )
+            delete(PasswordResetOTP).where(PasswordResetOTP.user_id == user_id)
         )
 
         await db.commit()

@@ -6,16 +6,12 @@ from ivhuRedu.schemas.field_image import ReportImageCreate, ReportImageUpdate
 
 
 class FieldImageRepository:
-
     def __init__(self, db: AsyncSession):
         self.db = db
 
     async def create(self, data: ReportImageCreate) -> FieldImage:
-       
-        img = FieldImage(
-            report_id=data.report_id,
-            image_url=data.file_url
-        )
+
+        img = FieldImage(report_id=data.report_id, image_url=data.file_url)
         self.db.add(img)
         await self.db.commit()
         await self.db.refresh(img)
@@ -33,12 +29,13 @@ class FieldImageRepository:
         )
         return list(result.scalars().all())
 
-    async def update(self, image_id: UUID, data: ReportImageUpdate) -> FieldImage | None:
+    async def update(
+        self, image_id: UUID, data: ReportImageUpdate
+    ) -> FieldImage | None:
         img = await self.get_by_id(image_id)
         if not img:
             return None
 
-        
         update_data = data.model_dump(exclude_unset=True)
         if "file_url" in update_data:
             update_data["image_url"] = update_data.pop("file_url")

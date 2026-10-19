@@ -9,7 +9,6 @@ from .password_reset_otp import PasswordResetOTP
 from .ussd import USSDSession
 
 
-
 __all__ = [
     "User",
     "UserType",

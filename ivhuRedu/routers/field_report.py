@@ -50,9 +50,7 @@ async def get_field_reports(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return await FieldReportService(db).get_all(
-        current_user
-    )
+    return await FieldReportService(db).get_all(current_user)
 
 
 @router.get(

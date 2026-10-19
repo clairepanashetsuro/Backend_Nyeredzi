@@ -22,9 +22,7 @@ async def authenticate_user(
     invalid_credentials = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Incorrect phone number or password",
-        headers={
-            "WWW-Authenticate": "Bearer"
-        },
+        headers={"WWW-Authenticate": "Bearer"},
     )
 
     user = await user_repository.get_by_phone_number(
@@ -119,9 +117,7 @@ async def login(
                 detail="Extension Worker profile not found.",
             )
 
-        worker_id = str(
-            user.extension_worker.worker_id
-        )
+        worker_id = str(user.extension_worker.worker_id)
 
     return {
         "access_token": access_token,
@@ -164,15 +160,11 @@ async def change_password(
             detail="New password cannot be the same as the old password.",
         )
 
-    user.hashed_password = await hash_password(
-        new_password
-    )
+    user.hashed_password = await hash_password(new_password)
 
     user.must_change_password = False
 
     await db.commit()
     await db.refresh(user)
 
-    return {
-        "message": "Password changed successfully."
-    }
+    return {"message": "Password changed successfully."}

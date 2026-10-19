@@ -157,12 +157,10 @@ def _get_private_key() -> str:
     if _PRIVATE_KEY is not None:
         return _PRIVATE_KEY
 
-    
     env_key = os.getenv("JWT_PRIVATE_KEY")
     if env_key:
         _PRIVATE_KEY = _decode_key_content(env_key)
         return _PRIVATE_KEY
-
 
     key_path = os.getenv("JWT_PRIVATE_KEY_PATH", "keys/jwt_private.pem")
     try:
@@ -183,12 +181,10 @@ def _get_public_key() -> str:
     if _PUBLIC_KEY is not None:
         return _PUBLIC_KEY
 
-
     env_key = os.getenv("JWT_PUBLIC_KEY")
     if env_key:
         _PUBLIC_KEY = _decode_key_content(env_key)
         return _PUBLIC_KEY
-
 
     key_path = os.getenv("JWT_PUBLIC_KEY_PATH", "keys/jwt_public.pem")
     try:
@@ -210,14 +206,8 @@ async def create_access_token(
 
     to_encode = data.copy()
 
-    expire = (
-        datetime.now(timezone.utc)
-        + (
-            expires_delta
-            or timedelta(
-                minutes=ACCESS_TOKEN_EXPIRE_MINUTES
-            )
-        )
+    expire = datetime.now(timezone.utc) + (
+        expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     )
 
     to_encode.update(
@@ -242,14 +232,8 @@ async def create_refresh_token(
 
     to_encode = data.copy()
 
-    expire = (
-        datetime.now(timezone.utc)
-        + (
-            expires_delta
-            or timedelta(
-                days=REFRESH_TOKEN_EXPIRE_DAYS
-            )
-        )
+    expire = datetime.now(timezone.utc) + (
+        expires_delta or timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
     )
 
     to_encode.update(
@@ -274,14 +258,8 @@ async def create_offline_token(
 
     to_encode = data.copy()
 
-    expire = (
-        datetime.now(timezone.utc)
-        + (
-            expires_delta
-            or timedelta(
-                days=OFFLINE_TOKEN_EXPIRE_DAYS
-            )
-        )
+    expire = datetime.now(timezone.utc) + (
+        expires_delta or timedelta(days=OFFLINE_TOKEN_EXPIRE_DAYS)
     )
 
     to_encode.update(
@@ -310,14 +288,8 @@ async def create_password_reset_token(
     This token is NOT an access token.
     """
 
-    expire = (
-        datetime.now(timezone.utc)
-        + (
-            expires_delta
-            or timedelta(
-                minutes=PASSWORD_RESET_TOKEN_EXPIRE_MINUTES
-            )
-        )
+    expire = datetime.now(timezone.utc) + (
+        expires_delta or timedelta(minutes=PASSWORD_RESET_TOKEN_EXPIRE_MINUTES)
     )
 
     payload = {
@@ -339,7 +311,6 @@ async def decode_token(
 ) -> Optional[dict]:
 
     try:
-
         return await asyncio.to_thread(
             jwt.decode,
             token,
@@ -348,5 +319,4 @@ async def decode_token(
         )
 
     except InvalidTokenError:
-
         return None

@@ -22,9 +22,7 @@ async def create_farmer_request(
     request_in: FarmerRequestCreate,
     db: AsyncSession = Depends(get_db),
 ):
-    return await FarmerRequestService(db).create_farmer_request(
-        request_in
-    )
+    return await FarmerRequestService(db).create_farmer_request(request_in)
 
 
 @router.post(
@@ -35,9 +33,7 @@ async def create_multiple_farmer_requests(
     requests_in: List[FarmerRequestCreate],
     db: AsyncSession = Depends(get_db),
 ):
-    return await FarmerRequestService(db).create_multiple_farmer_requests(
-        requests_in
-    )
+    return await FarmerRequestService(db).create_multiple_farmer_requests(requests_in)
 
 
 @router.post(
@@ -47,15 +43,10 @@ async def create_multiple_farmer_requests(
 async def remove_duplicate_requests(
     db: AsyncSession = Depends(get_db),
 ):
-    removed_count = await FarmerRequestService(
-        db
-    ).remove_duplicate_requests()
+    removed_count = await FarmerRequestService(db).remove_duplicate_requests()
 
     return {
-        "message": (
-            f"Successfully removed "
-            f"{removed_count} duplicate farmer requests."
-        )
+        "message": (f"Successfully removed {removed_count} duplicate farmer requests.")
     }
 
 
@@ -64,9 +55,7 @@ async def search_requests_by_ussd_keyword(
     keyword: str,
     db: AsyncSession = Depends(get_db),
 ):
-    return await FarmerRequestService(
-        db
-    ).search_requests_by_ussd_keyword(keyword)
+    return await FarmerRequestService(db).search_requests_by_ussd_keyword(keyword)
 
 
 @router.post("/assign")
@@ -75,9 +64,7 @@ async def assign_requests_to_worker_batch(
     worker_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
 ):
-    return await FarmerRequestService(
-        db
-    ).assign_requests_to_worker_batch(
+    return await FarmerRequestService(db).assign_requests_to_worker_batch(
         request_ids,
         worker_id,
     )
@@ -89,9 +76,7 @@ async def get_all_farmer_requests(
     limit: int = 100,
     db: AsyncSession = Depends(get_db),
 ):
-    return await FarmerRequestService(
-        db
-    ).get_all_farmer_requests(
+    return await FarmerRequestService(db).get_all_farmer_requests(
         skip,
         limit,
     )
@@ -102,11 +87,7 @@ async def get_farmer_requests_by_farmer_id(
     farmer_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
 ):
-    return await FarmerRequestService(
-        db
-    ).get_requests_by_specific_farmer(
-        farmer_id
-    )
+    return await FarmerRequestService(db).get_requests_by_specific_farmer(farmer_id)
 
 
 @router.get("/{request_id}")
@@ -114,11 +95,7 @@ async def get_farmer_request_by_request_id(
     request_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
 ):
-    return await FarmerRequestService(
-        db
-    ).get_farmer_request_by_id(
-        request_id
-    )
+    return await FarmerRequestService(db).get_farmer_request_by_id(request_id)
 
 
 @router.patch("/{request_id}")
@@ -127,9 +104,7 @@ async def update_farmer_request(
     request_in: FarmerRequestUpdate,
     db: AsyncSession = Depends(get_db),
 ):
-    return await FarmerRequestService(
-        db
-    ).update_farmer_request_details(
+    return await FarmerRequestService(db).update_farmer_request_details(
         request_id,
         request_in,
     )
@@ -143,10 +118,6 @@ async def delete_farmer_request_record(
     request_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
 ):
-    await FarmerRequestService(
-        db
-    ).delete_farmer_request_record(
-        request_id
-    )
+    await FarmerRequestService(db).delete_farmer_request_record(request_id)
 
     return None

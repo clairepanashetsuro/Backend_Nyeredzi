@@ -6,7 +6,6 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
 
-
 class Location(Base):
     __tablename__ = "location"
 
@@ -27,5 +26,11 @@ class Location(Base):
         nullable=False,
     )
 
-    farmers = relationship("Farmer",back_populates="location",)
-    extension_workers = relationship("ExtensionWorker",back_populates="location",)
+    farmers = relationship(
+        "Farmer",
+        back_populates="location",
+    )
+    extension_workers = relationship(
+        "ExtensionWorker",
+        back_populates="location",
+    )

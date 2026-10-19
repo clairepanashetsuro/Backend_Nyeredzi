@@ -5,6 +5,7 @@ from sqlalchemy.future import select
 from ivhuRedu.models.location import Location
 from ivhuRedu.schemas.location import LocationCreate, LocationUpdate
 
+
 class LocationRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
@@ -21,10 +22,14 @@ class LocationRepository:
         return result.scalars().all()
 
     async def get_by_id(self, location_id: uuid.UUID) -> Optional[Location]:
-        result = await self.db.execute(select(Location).where(Location.location_id == location_id))
+        result = await self.db.execute(
+            select(Location).where(Location.location_id == location_id)
+        )
         return result.scalar_one_or_none()
 
-    async def update(self, location_id: uuid.UUID, location_update: LocationUpdate) -> Optional[Location]:
+    async def update(
+        self, location_id: uuid.UUID, location_update: LocationUpdate
+    ) -> Optional[Location]:
         location = await self.get_by_id(location_id)
         if not location:
             return None

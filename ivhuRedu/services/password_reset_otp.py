@@ -21,6 +21,7 @@ OTP_LOCK_MINUTES = 15
 OTP_SEND_COOLDOWN_SECONDS = 60
 OTP_MAX_SENDS_PER_HOUR = 3
 
+
 async def request_password_reset(
     db: AsyncSession,
     phone_number: str,
@@ -37,18 +38,12 @@ async def request_password_reset(
     now = datetime.now(timezone.utc)
 
     if user.is_locked:
-        if (
-            user.locked_until is None
-            or user.locked_until > now
-        ):
+        if user.locked_until is None or user.locked_until > now:
             return None, None
 
-    latest_otp = (
-        await password_reset_otp_repository
-        .get_latest_by_user_id(
-            db,
-            user.id,
-        )
+    latest_otp = await password_reset_otp_repository.get_latest_by_user_id(
+        db,
+        user.id,
     )
 
     if latest_otp and latest_otp.locked_until:
@@ -56,23 +51,15 @@ async def request_password_reset(
             return None, None
 
     if latest_otp:
-        seconds_since_last_otp = (
-            now - latest_otp.created_at
-        ).total_seconds()
+        seconds_since_last_otp = (now - latest_otp.created_at).total_seconds()
 
-        if (
-            seconds_since_last_otp
-            < OTP_SEND_COOLDOWN_SECONDS
-        ):
+        if seconds_since_last_otp < OTP_SEND_COOLDOWN_SECONDS:
             return None, None
 
-    recent_otp_count = (
-        await password_reset_otp_repository
-        .count_recent_by_user_id(
-            db,
-            user.id,
-            minutes=60,
-        )
+    recent_otp_count = await password_reset_otp_repository.count_recent_by_user_id(
+        db,
+        user.id,
+        minutes=60,
     )
 
     if recent_otp_count >= OTP_MAX_SENDS_PER_HOUR:
@@ -84,11 +71,8 @@ async def request_password_reset(
         otp,
     )
 
-    expires_at = (
-        now
-        + timedelta(
-            minutes=OTP_EXPIRY_MINUTES,
-        )
+    expires_at = now + timedelta(
+        minutes=OTP_EXPIRY_MINUTES,
     )
 
     await password_reset_otp_repository.create(
@@ -104,6 +88,7 @@ async def request_password_reset(
 
     return otp, user.phone_number
 
+
 async def verify_password_reset_otp_code(
     db: AsyncSession,
     phone_number: str,
@@ -118,51 +103,33 @@ async def verify_password_reset_otp_code(
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=(
-                "Invalid or expired "
-                "password reset code."
-            ),
+            detail=("Invalid or expired password reset code."),
         )
 
     now = datetime.now(timezone.utc)
 
     if user.is_locked:
-        if (
-            user.locked_until is None
-            or user.locked_until > now
-        ):
+        if user.locked_until is None or user.locked_until > now:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Account locked.",
             )
 
-    otp_record = (
-        await password_reset_otp_repository
-        .get_latest_by_user_id(
-            db,
-            user.id,
-        )
+    otp_record = await password_reset_otp_repository.get_latest_by_user_id(
+        db,
+        user.id,
     )
 
     if otp_record is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=(
-                "Invalid or expired "
-                "password reset code."
-            ),
+            detail=("Invalid or expired password reset code."),
         )
 
-    if (
-        otp_record.locked_until
-        and otp_record.locked_until > now
-    ):
+    if otp_record.locked_until and otp_record.locked_until > now:
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail=(
-                "Too many failed attempts. "
-                "Try again in 15 minutes."
-            ),
+            detail=("Too many failed attempts. Try again in 15 minutes."),
         )
 
     if otp_record.expires_at <= now:
@@ -172,10 +139,7 @@ async def verify_password_reset_otp_code(
         )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=(
-                "Invalid or expired "
-                "password reset code."
-            ),
+            detail=("Invalid or expired password reset code."),
         )
 
     is_valid = await verify_password_reset_otp(
@@ -184,16 +148,11 @@ async def verify_password_reset_otp_code(
     )
 
     if not is_valid:
-        new_attempts = (
-            otp_record.attempts + 1
-        )
+        new_attempts = otp_record.attempts + 1
 
         if new_attempts >= OTP_MAX_ATTEMPTS:
-            locked_until = (
-                now
-                + timedelta(
-                    minutes=OTP_LOCK_MINUTES,
-                )
+            locked_until = now + timedelta(
+                minutes=OTP_LOCK_MINUTES,
             )
             await password_reset_otp_repository.update(
                 db,
@@ -205,10 +164,7 @@ async def verify_password_reset_otp_code(
             )
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                detail=(
-                    "Too many failed attempts. "
-                    "Try again in 15 minutes."
-                ),
+                detail=("Too many failed attempts. Try again in 15 minutes."),
             )
 
         await password_reset_otp_repository.update(

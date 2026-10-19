@@ -7,7 +7,6 @@ from ivhuRedu.models.farmer import Farmer
 
 
 class FarmerRepository:
-
     def __init__(self, db: AsyncSession):
         self.db = db
 
@@ -27,9 +26,7 @@ class FarmerRepository:
         farmer_id: UUID,
     ) -> Farmer | None:
         result = await self.db.execute(
-            select(Farmer).where(
-                Farmer.farmer_id == farmer_id
-            )
+            select(Farmer).where(Farmer.farmer_id == farmer_id)
         )
 
         return result.scalar_one_or_none()
@@ -38,20 +35,14 @@ class FarmerRepository:
         self,
         user_id: UUID,
     ) -> Farmer | None:
-        result = await self.db.execute(
-            select(Farmer).where(
-                Farmer.user_id == user_id
-            )
-        )
+        result = await self.db.execute(select(Farmer).where(Farmer.user_id == user_id))
 
         return result.scalar_one_or_none()
 
     async def get_all(
         self,
     ) -> list[Farmer]:
-        result = await self.db.execute(
-            select(Farmer)
-        )
+        result = await self.db.execute(select(Farmer))
 
         return result.scalars().all()
 
@@ -59,11 +50,7 @@ class FarmerRepository:
         self,
         user_id: UUID,
     ) -> bool:
-        result = await self.db.execute(
-            select(Farmer).where(
-                Farmer.user_id == user_id
-            )
-        )
+        result = await self.db.execute(select(Farmer).where(Farmer.user_id == user_id))
 
         return result.scalar_one_or_none() is not None
 
@@ -74,9 +61,7 @@ class FarmerRepository:
         location_id: UUID | None = None,
     ) -> Farmer | None:
 
-        farmer = await self.get_by_id(
-            farmer_id
-        )
+        farmer = await self.get_by_id(farmer_id)
 
         if not farmer:
             return None
@@ -91,5 +76,6 @@ class FarmerRepository:
         await self.db.refresh(farmer)
 
         return farmer
+
 
 farmer_repository = FarmerRepository

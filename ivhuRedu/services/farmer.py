@@ -1,4 +1,3 @@
-
 import logging
 import uuid
 
@@ -19,8 +18,6 @@ from ivhuRedu.schemas.farmer import FarmerCreate
 logger = logging.getLogger(__name__)
 
 
-
-
 async def create_farmer(
     db: AsyncSession,
     data: FarmerCreate,
@@ -37,7 +34,6 @@ async def create_farmer(
             detail="A user with this phone number already exists.",
         )
 
-
     user = User(
         first_name=data.first_name,
         last_name=data.last_name,
@@ -48,7 +44,6 @@ async def create_farmer(
     )
 
     db.add(user)
-
 
     await db.flush()
 
@@ -72,16 +67,12 @@ async def create_farmer(
     except IntegrityError:
         await db.rollback()
 
-        logger.exception(
-            "Failed creating farmer"
-        )
+        logger.exception("Failed creating farmer")
 
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Farmer could not be created.",
         )
-
-
 
 
 async def get_farmer(
@@ -94,9 +85,7 @@ async def get_farmer(
             selectinload(Farmer.user),
             selectinload(Farmer.location),
         )
-        .where(
-            Farmer.farmer_id == farmer_id
-        )
+        .where(Farmer.farmer_id == farmer_id)
     )
 
     farmer = result.scalar_one_or_none()
@@ -108,8 +97,6 @@ async def get_farmer(
         )
 
     return farmer
-
-
 
 
 async def update_farmer(
@@ -130,13 +117,11 @@ async def update_farmer(
             detail="Farmer user not found.",
         )
 
-
     user_fields = {
         "first_name",
         "last_name",
         "phone_number",
     }
-
 
     farmer_fields = {
         "ward_name",
@@ -144,28 +129,20 @@ async def update_farmer(
         "primary_crop",
     }
 
-
     if "phone_number" in data:
-        existing_user = (
-            await user_repository.get_by_phone_number(
-                db,
-                data["phone_number"],
-            )
+        existing_user = await user_repository.get_by_phone_number(
+            db,
+            data["phone_number"],
         )
 
-        if (
-            existing_user
-            and existing_user.id != user.id
-        ):
+        if existing_user and existing_user.id != user.id:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="A user with this phone number already exists.",
             )
 
     for field, value in data.items():
-
         if field in user_fields:
-
             setattr(
                 user,
                 field,
@@ -173,7 +150,6 @@ async def update_farmer(
             )
 
         elif field in farmer_fields:
-
             setattr(
                 farmer,
                 field,
@@ -190,16 +166,12 @@ async def update_farmer(
     except IntegrityError:
         await db.rollback()
 
-        logger.exception(
-            "Failed updating farmer"
-        )
+        logger.exception("Failed updating farmer")
 
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Farmer could not be updated.",
         )
-
-
 
 
 async def delete_farmer(
@@ -214,25 +186,19 @@ async def delete_farmer(
     user = farmer.user
 
     try:
-
         await db.delete(farmer)
-
 
         if user:
             await db.delete(user)
 
         await db.commit()
 
-        return {
-            "message": "Farmer deleted successfully."
-        }
+        return {"message": "Farmer deleted successfully."}
 
     except IntegrityError:
         await db.rollback()
 
-        logger.exception(
-            "Failed deleting farmer"
-        )
+        logger.exception("Failed deleting farmer")
 
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,

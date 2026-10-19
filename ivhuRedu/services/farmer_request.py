@@ -23,7 +23,6 @@ from ivhuRedu.schemas.farmer_request import (
 
 
 class FarmerRequestService:
-
     def __init__(self, db: AsyncSession):
         self.db = db
         self.repo = FarmerRequestRepository(db)
@@ -46,9 +45,7 @@ class FarmerRequestService:
 
         a = (
             math.sin(delta_lat / 2) ** 2
-            + math.cos(lat1)
-            * math.cos(lat2)
-            * math.sin(delta_lon / 2) ** 2
+            + math.cos(lat1) * math.cos(lat2) * math.sin(delta_lon / 2) ** 2
         )
 
         c = 2 * math.atan2(
@@ -97,7 +94,6 @@ class FarmerRequestService:
         nearest_distance = float("inf")
 
         for worker in workers:
-
             if not worker.location:
                 continue
 
@@ -144,20 +140,12 @@ class FarmerRequestService:
         db_request = await self.repo.create(request_data)
 
         if request_in.farmer_id:
-
-            assignment = await self.assign_nearest_worker(
-                request_in.farmer_id
-            )
+            assignment = await self.assign_nearest_worker(request_in.farmer_id)
 
             if assignment:
+                db_request.assigned_worker_id = assignment["worker_id"]
 
-                db_request.assigned_worker_id = (
-                    assignment["worker_id"]
-                )
-
-                db_request.distance_in_meters = (
-                    assignment["distance_in_meters"]
-                )
+                db_request.distance_in_meters = assignment["distance_in_meters"]
 
                 db_request.status = RequestStatus.ASSIGNED
 
@@ -174,9 +162,7 @@ class FarmerRequestService:
         created = []
 
         for request_in in requests_in:
-            request = await self.create_farmer_request(
-                request_in
-            )
+            request = await self.create_farmer_request(request_in)
             created.append(request)
 
         return created
@@ -197,18 +183,14 @@ class FarmerRequestService:
         farmer_id: uuid.UUID,
     ):
 
-        return await self.repo.get_by_farmer_id(
-            farmer_id
-        )
+        return await self.repo.get_by_farmer_id(farmer_id)
 
     async def get_farmer_request_by_id(
         self,
         request_id: uuid.UUID,
     ):
 
-        request = await self.repo.get_by_id(
-            request_id
-        )
+        request = await self.repo.get_by_id(request_id)
 
         if not request:
             raise ValueError("Farmer request not found")
@@ -221,16 +203,12 @@ class FarmerRequestService:
         request_in: FarmerRequestUpdate,
     ):
 
-        request = await self.repo.get_by_id(
-            request_id
-        )
+        request = await self.repo.get_by_id(request_id)
 
         if not request:
             raise ValueError("Farmer request not found")
 
-        update_data = request_in.model_dump(
-            exclude_unset=True
-        )
+        update_data = request_in.model_dump(exclude_unset=True)
 
         return await self.repo.update(
             request,
@@ -242,9 +220,7 @@ class FarmerRequestService:
         request_id: uuid.UUID,
     ):
 
-        request = await self.repo.get_by_id(
-            request_id
-        )
+        request = await self.repo.get_by_id(request_id)
 
         if not request:
             raise ValueError("Farmer request not found")
@@ -260,9 +236,7 @@ class FarmerRequestService:
         keyword: str,
     ):
 
-        return await self.repo.search_by_keyword(
-            keyword
-        )
+        return await self.repo.search_by_keyword(keyword)
 
     async def assign_requests_to_worker_batch(
         self,

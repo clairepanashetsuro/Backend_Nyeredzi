@@ -1,5 +1,6 @@
 import os
 from cryptography.fernet import Fernet
+
 _KEY_PATH = os.path.join(os.getcwd(), "keys", "file_encryption.key")
 
 

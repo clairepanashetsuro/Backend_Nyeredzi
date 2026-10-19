@@ -16,9 +16,7 @@ from ivhuRedu.repositories.user import user_repository
 from ivhuRedu.services.security import decode_token
 
 
-oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl="auth/login"
-)
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
 password_reset_scheme = HTTPBearer()
 
@@ -36,9 +34,7 @@ async def get_current_user(
     credentials_error = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
-        headers={
-            "WWW-Authenticate": "Bearer"
-        },
+        headers={"WWW-Authenticate": "Bearer"},
     )
 
     payload = await decode_token(token)
@@ -78,28 +74,21 @@ async def get_current_user(
             detail="Account locked.",
         )
 
-    if (
-        token_type == "offline"
-        and user.user_type != UserType.EXTENSION_WORKER
-    ):
+    if token_type == "offline" and user.user_type != UserType.EXTENSION_WORKER:
         raise credentials_error
 
     return user
 
 
 async def get_current_password_reset_user(
-    credentials: HTTPAuthorizationCredentials = Depends(
-        password_reset_scheme
-    ),
+    credentials: HTTPAuthorizationCredentials = Depends(password_reset_scheme),
     db: AsyncSession = Depends(get_db),
 ) -> User:
 
     credentials_error = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate reset credentials",
-        headers={
-            "WWW-Authenticate": "Bearer"
-        },
+        headers={"WWW-Authenticate": "Bearer"},
     )
 
     token = credentials.credentials
@@ -140,9 +129,7 @@ async def get_current_password_reset_user(
 
 
 def require_password_changed(
-    current_user: User = Depends(
-        get_current_user
-    ),
+    current_user: User = Depends(get_current_user),
 ) -> User:
 
     if current_user.must_change_password:
@@ -159,9 +146,7 @@ def require_roles(
 ):
 
     def role_checker(
-        current_user: User = Depends(
-            require_password_changed
-        ),
+        current_user: User = Depends(require_password_changed),
     ) -> User:
 
         if current_user.user_type not in allowed_roles:
