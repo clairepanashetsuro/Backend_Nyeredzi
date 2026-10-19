@@ -4,7 +4,6 @@ from pydantic import BaseModel, Field
 
 
 class Token(BaseModel):
-
     access_token: str
 
     refresh_token: str
@@ -21,12 +20,10 @@ class Token(BaseModel):
 
 
 class RefreshTokenRequest(BaseModel):
-
     refresh_token: str
 
 
 class ChangePasswordRequest(BaseModel):
-
     old_password: str
 
     new_password: str = Field(
@@ -36,7 +33,6 @@ class ChangePasswordRequest(BaseModel):
 
 
 class ForgotPasswordRequest(BaseModel):
-
     phone_number: str = Field(
         min_length=7,
         max_length=20,
@@ -44,12 +40,10 @@ class ForgotPasswordRequest(BaseModel):
 
 
 class ForgotPasswordResponse(BaseModel):
-
     message: str
 
 
 class VerifyResetOTPRequest(BaseModel):
-
     phone_number: str = Field(
         min_length=7,
         max_length=20,
@@ -63,7 +57,6 @@ class VerifyResetOTPRequest(BaseModel):
 
 
 class ResetPasswordRequest(BaseModel):
-
     reset_token: str = Field(
         min_length=1,
     )

@@ -85,9 +85,7 @@ async def refresh_token(
     data: RefreshTokenRequest,
     db: AsyncSession = Depends(get_db),
 ):
-    payload = await decode_token(
-        data.refresh_token
-    )
+    payload = await decode_token(data.refresh_token)
 
     if payload is None:
         raise HTTPException(
@@ -172,19 +170,16 @@ async def forgot_password(
     db: AsyncSession = Depends(get_db),
     sms_service: SMSService = Depends(get_sms_service),
 ):
-    otp, phone_number = (
-        await password_reset_service.request_password_reset(
-            db=db,
-            phone_number=data.phone_number,
-        )
+    otp, phone_number = await password_reset_service.request_password_reset(
+        db=db,
+        phone_number=data.phone_number,
     )
 
     if otp and phone_number:
         sms_request = SMSSendRequest(
             alert_type="password_reset",
             message=(
-                f"Your IvhuRedu password reset code is "
-                f"{otp}. It expires in 5 minutes."
+                f"Your IvhuRedu password reset code is {otp}. It expires in 5 minutes."
             ),
             phone_number=phone_number,
         )
@@ -193,12 +188,7 @@ async def forgot_password(
             sms_request,
         )
 
-    return {
-        "message": (
-            "If the account exists, "
-            "a password reset code has been sent."
-        )
-    }
+    return {"message": ("If the account exists, a password reset code has been sent.")}
 
 
 @router.post(
@@ -208,12 +198,10 @@ async def verify_reset_otp(
     data: VerifyResetOTPRequest,
     db: AsyncSession = Depends(get_db),
 ):
-    user_id = (
-        await password_reset_service.verify_password_reset_otp_code(
-            db=db,
-            phone_number=data.phone_number,
-            otp_code=data.otp_code,
-        )
+    user_id = await password_reset_service.verify_password_reset_otp_code(
+        db=db,
+        phone_number=data.phone_number,
+        otp_code=data.otp_code,
     )
 
     if user_id is None:
@@ -256,13 +244,9 @@ async def verify_reset_otp(
 async def reset_password(
     data: ResetPasswordRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(
-        get_current_password_reset_user
-    ),
+    current_user: User = Depends(get_current_password_reset_user),
 ):
-    hashed_password = await hash_password(
-        data.new_password
-    )
+    hashed_password = await hash_password(data.new_password)
 
     await user_repository.update(
         db=db,
@@ -273,6 +257,4 @@ async def reset_password(
         },
     )
 
-    return {
-        "message": "Password has been reset successfully."
-    }
+    return {"message": "Password has been reset successfully."}
