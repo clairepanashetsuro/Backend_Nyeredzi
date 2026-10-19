@@ -41,9 +41,7 @@ router = APIRouter(
 async def create_extension_worker(
     data: ExtensionWorkerCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(
-        require_roles(UserType.SUPERVISOR)
-    ),
+    current_user: User = Depends(require_roles(UserType.SUPERVISOR)),
 ):
     return await extension_worker_service.create_extension_worker(
         db=db,
@@ -64,9 +62,7 @@ async def get_extension_workers(
         )
     ),
 ):
-    return await user_repository.get_all_extension_workers(
-        db
-    )
+    return await user_repository.get_all_extension_workers(db)
 
 
 @router.patch(
@@ -77,9 +73,7 @@ async def update_extension_worker_status(
     worker_id: uuid.UUID,
     data: ExtensionWorkerStatusUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(
-        require_roles(UserType.SUPERVISOR)
-    ),
+    current_user: User = Depends(require_roles(UserType.SUPERVISOR)),
 ):
     return await extension_worker_service.update_worker_status(
         db=db,
@@ -126,22 +120,16 @@ async def update_extension_worker(
     return await extension_worker_service.update_extension_worker(
         db=db,
         worker_id=worker_id,
-        data=data.model_dump(
-            exclude_unset=True
-        ),
+        data=data.model_dump(exclude_unset=True),
         current_user=current_user,
     )
 
 
-@router.delete(
-    "/{worker_id}"
-)
+@router.delete("/{worker_id}")
 async def delete_extension_worker(
     worker_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(
-        require_roles(UserType.ADMIN)
-    ),
+    current_user: User = Depends(require_roles(UserType.ADMIN)),
 ):
     return await extension_worker_service.delete_extension_worker(
         db=db,

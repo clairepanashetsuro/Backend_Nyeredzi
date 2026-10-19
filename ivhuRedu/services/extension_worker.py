@@ -59,9 +59,7 @@ async def create_extension_worker(
         last_name=data.last_name,
         phone_number=data.phone_number,
         email=data.email,
-        hashed_password=await hash_password(
-            data.password
-        ),
+        hashed_password=await hash_password(data.password),
         user_type=UserType.EXTENSION_WORKER,
         must_change_password=True,
     )
@@ -72,9 +70,7 @@ async def create_extension_worker(
 
     worker = ExtensionWorker(
         user_id=user.id,
-        hashed_ussd_pincode=await hash_password(
-            data.ussd_pincode
-        ),
+        hashed_ussd_pincode=await hash_password(data.ussd_pincode),
         assigned_ward_name=data.assigned_ward_name,
         location_id=data.location_id,
         availability_status=WorkerAvailabilityStatus.AVAILABLE,
@@ -93,9 +89,7 @@ async def create_extension_worker(
     except IntegrityError:
         await db.rollback()
 
-        logger.exception(
-            "Failed creating extension worker"
-        )
+        logger.exception("Failed creating extension worker")
 
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -109,9 +103,7 @@ async def update_worker_status(
     availability_status: WorkerAvailabilityStatus,
 ):
     result = await db.execute(
-        select(ExtensionWorker).where(
-            ExtensionWorker.worker_id == worker_id
-        )
+        select(ExtensionWorker).where(ExtensionWorker.worker_id == worker_id)
     )
 
     worker = result.scalar_one_or_none()
@@ -134,9 +126,7 @@ async def update_worker_status(
     except IntegrityError:
         await db.rollback()
 
-        logger.exception(
-            "Failed updating extension worker status"
-        )
+        logger.exception("Failed updating extension worker status")
 
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -150,14 +140,8 @@ async def get_extension_worker(
 ):
     result = await db.execute(
         select(ExtensionWorker)
-        .options(
-            selectinload(
-                ExtensionWorker.user
-            )
-        )
-        .where(
-            ExtensionWorker.worker_id == worker_id
-        )
+        .options(selectinload(ExtensionWorker.user))
+        .where(ExtensionWorker.worker_id == worker_id)
     )
 
     worker = result.scalar_one_or_none()
@@ -227,15 +211,11 @@ async def update_extension_worker(
             )
 
         elif field == "password":
-            user.hashed_password = await hash_password(
-                value
-            )
+            user.hashed_password = await hash_password(value)
             user.must_change_password = False
 
         elif field == "ussd_pincode":
-            worker.hashed_ussd_pincode = await hash_password(
-                value
-            )
+            worker.hashed_ussd_pincode = await hash_password(value)
 
         elif field in restricted_worker_fields:
             if not is_privileged:
@@ -267,9 +247,7 @@ async def update_extension_worker(
     except IntegrityError:
         await db.rollback()
 
-        logger.exception(
-            "Failed updating extension worker"
-        )
+        logger.exception("Failed updating extension worker")
 
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -283,14 +261,8 @@ async def delete_extension_worker(
 ):
     result = await db.execute(
         select(ExtensionWorker)
-        .options(
-            selectinload(
-                ExtensionWorker.user
-            )
-        )
-        .where(
-            ExtensionWorker.worker_id == worker_id
-        )
+        .options(selectinload(ExtensionWorker.user))
+        .where(ExtensionWorker.worker_id == worker_id)
     )
 
     worker = result.scalar_one_or_none()
@@ -311,16 +283,12 @@ async def delete_extension_worker(
 
         await db.commit()
 
-        return {
-            "message": "Extension worker deleted successfully."
-        }
+        return {"message": "Extension worker deleted successfully."}
 
     except IntegrityError:
         await db.rollback()
 
-        logger.exception(
-            "Failed deleting extension worker"
-        )
+        logger.exception("Failed deleting extension worker")
 
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,

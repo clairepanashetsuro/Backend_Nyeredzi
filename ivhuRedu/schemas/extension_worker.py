@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime
 from typing import Optional
+from ivhuRedu.schemas.user import PHONE_REGEX
 
 from pydantic import (
     BaseModel,
@@ -53,6 +54,15 @@ class ExtensionWorkerCreate(BaseModel):
     )
 
     location_id: uuid.UUID
+    @field_validator("phone_number")
+    @classmethod
+    def phone_number_must_look_valid(cls, value: str) -> str:
+        if not PHONE_REGEX.fullmatch(value):
+            raise ValueError(
+                "phone_number must contain 7-15 digits "
+                "with an optional leading +"
+            )
+        return value
 
     @field_validator("ussd_pincode")
     @classmethod
@@ -61,9 +71,7 @@ class ExtensionWorkerCreate(BaseModel):
         value: str,
     ) -> str:
         if not value.isdigit():
-            raise ValueError(
-                "USSD PIN must contain only numbers"
-            )
+            raise ValueError("USSD PIN must contain only numbers")
 
         return value
 
@@ -117,17 +125,13 @@ class ExtensionWorkerUpdate(BaseModel):
             return value
 
         if not value.isdigit():
-            raise ValueError(
-                "USSD PIN must contain only numbers"
-            )
+            raise ValueError("USSD PIN must contain only numbers")
 
         return value
 
 
 class ExtensionWorkerRead(BaseModel):
-    model_config = ConfigDict(
-        from_attributes=True
-    )
+    model_config = ConfigDict(from_attributes=True)
 
     worker_id: uuid.UUID
     user_id: uuid.UUID
